@@ -26,7 +26,7 @@ class FF_Neural_network:
             self.hidden_layers.append(layer)
         
         for i in range(len(self.hidden_layers)):
-            if (i == 0):
+            if i == 0:
                 for unit in self.hidden_layers[i]:
                     unit.initialize_weights(self.input_size)
             else:
