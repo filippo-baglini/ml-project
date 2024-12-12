@@ -1,9 +1,9 @@
-import nn
-import activations
+from nn import FF_Neural_network
+from activations import *
 import units
 import numpy as np
 
-nn = nn.FF_Neural_network(3, [2, 3], 5, activations.Tanh)
+nn = FF_Neural_network(3, [2, 3], 5, Tanh, Logistic)
 
 for i in range(len(nn.hidden_layers)):
     for j in range(len(nn.hidden_layers[i])):
@@ -13,3 +13,5 @@ for i in range(len(nn.hidden_layers)):
 for i in range (nn.output_size):
       print(nn.output_layer[i].weights)
       print(nn.output_layer[i].activation)
+
+nn.fwd_computation([2,3,4])
