@@ -18,9 +18,11 @@ class HiddenUnit(Unit):
 
     def __init__(self, activation: ActivationFunction):
         self.weights = None
-        self.activation = activation
+        self.net = 0
+        self.activation = activation()
 
 class OutputUnit(Unit):
     def __init__(self, activation: ActivationFunction):
         self.weights = None
-        self.activation = activation
+        self.net = 0
+        self.activation = activation()

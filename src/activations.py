@@ -8,10 +8,10 @@ class ActivationFunction:
         raise NotImplementedError
     
 class Logistic(ActivationFunction):
-    def fwd(self, input, alfa):
+    def fwd(self, input, alfa = 1):
         return (1 / (1 + np.exp(-alfa * input)))
     
-    def derivative(self, input, alfa):
+    def derivative(self, input, alfa = 1):
         f = (1 / (1 + np.exp(-alfa * input)))
         return f * (1 - f)
 
