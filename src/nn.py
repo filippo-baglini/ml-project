@@ -1,6 +1,7 @@
 import numpy as np
 from activations import *
 from units import *
+#from criterion import MSE
 from typing import Optional, Literal, List
 
 class FF_Neural_network:
@@ -27,7 +28,7 @@ class FF_Neural_network:
             layer = [HiddenUnit(self.activation_function_hl) for _ in range (units)]
             self.hidden_layers.append(layer)
         
-        for i in range(len(self.hidden_layers)):
+        for i in range(len(self.hidden_layers)): #Initialization of weights for each unit in each hidden layer
             if (i == 0):
                 for unit in self.hidden_layers[i]:
                     unit.initialize_weights(self.input_size)
@@ -36,9 +37,9 @@ class FF_Neural_network:
                     unit.initialize_weights(self.hidden_layers_size[i - 1])
             
         self.output_size = output_size
-        self.output_layer = [OutputUnit(self.activation_function_out) for _ in range(self.output_size)]
+        self.output_layer = [OutputUnit(self.activation_function_out) for _ in range(self.output_size)] #Initialization of each unit in the output layer
 
-        for i in range (self.output_size):
+        for i in range (self.output_size): #Initialization of weights for each unit of the output layer
             for unit in self.output_layer:
                 unit.initialize_weights(self.hidden_layers_size[-1])
 
@@ -50,35 +51,52 @@ class FF_Neural_network:
             raise RuntimeError("The input layer size and the input size must coincide")
 
         #Load the input in the input layer
-        print("PROVA INPUT")
         for i in range(len(input)):
             self.input_layer[i].value = input[i]
-            print(self.input_layer[i].value)
         
         for i in range(len(self.hidden_layers_size)):
-            print(f"NET LAYER {i}")
             if (i == 0):
                 for unit in self.hidden_layers[i]:
-                    unit.net += unit.weights[0]
-                    for j in range (1, len(unit.weights)):
-                        unit.net += self.input_layer[j - 1].value * unit.weights[j]
-                    print(unit.net)
+                    unit.input = [self.input_layer[j].value * unit.weights[j] for j in range(len(unit.weights))]
+                    unit.net = unit.bias + np.dot(unit.input, unit.weights)
             else:
                 for unit in self.hidden_layers[i]:
-                    unit.net += unit.weights[0]
-                    for j in range (1, len(unit.weights)):
-                        unit.net += self.hidden_layers[i - 1][j - 1].activation.fwd(self.hidden_layers[i - 1][j - 1].net) * unit.weights[j]
-                        #unit.net += (self.hidden_layers[i - 1][j - 1].net * self.hidden_layers[i -1][j - 1].activation) * unit.weights[j]
-                    print(unit.net)
+                    unit.input = [self.hidden_layers[i - 1][j].compute_out() for j in range (len(unit.weights))]
+                    unit.net = unit.bias + np.dot(unit.input, unit.weights)
             
-        print ("NET OUTPUT LAYER")
         for unit in self.output_layer:
-            unit.net += unit.weights[0]
-            for i in range (1, len(unit.weights)):
-                unit.net += self.hidden_layers[-1][i - 1].activation.fwd(self.hidden_layers[-1][i - 1].net) * unit.weights[i]
-            print(unit.net)
+            unit.input = [self.hidden_layers[-1][i].compute_out() for i in range (len(unit.weights))]
+            unit.net = unit.bias + np.dot(unit.input, unit.weights)
         
-        return [self.output_layer[i].activation.fwd(self.output_layer[i].net) for i in range (len(self.output_layer))]
+        return [unit.compute_out() for unit in self.output_layer]
 
-    def backpropagation(self, output, y):
-        pass
+    def backpropagate(self, out, pred, learning_rate = 0.1):
+        
+        delta_out = []
+
+        for unit in self.output_layer:
+            delta_k = (out - pred) * unit.compute_derivative()
+            delta_out.append(delta_k)
+            unit.weights += learning_rate * (delta_k * unit.input)
+
+        delta_prev_layer = np.array([])
+
+        for layer_idx, layer in enumerate(reversed(self.hidden_layers)):
+            delta_layer = np.array([])
+            if layer_idx == 0:  # If it's the last hidden layer (first in reversed order)
+                for i in range(len(layer)):
+                    delta_j = np.dot(delta_out, [self.output_layer[j].weights[i] for j in range(len(self.output_layer))]) * layer[i].compute_derivative()
+                    delta_layer = np.append(delta_layer, delta_j)
+                    layer[i].weights += learning_rate * (delta_j * layer[i].input)
+            else:  # For other hidden layers
+                next_layer = self.hidden_layers[len(self.hidden_layers) - layer_idx]  # Get the next layer in the original order
+                for unit in layer:
+                    delta_j = np.array([np.dot(delta_prev_layer, [unit[j].weights[i] for j in range(len(next_layer))]) * unit.compute_derivative()])
+                    delta_layer = np.append(delta_layer, delta_j)
+                    unit.weights += learning_rate * (delta_j * unit.input)
+            delta_prev_layer = delta_layer  # Update delta for the next iteration
+
+    def train(self, input, output):
+        for i in range(len(input)):
+            pred = self.fwd_computation(input[i])
+            self.backpropagate(output[i], np.array(pred))

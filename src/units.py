@@ -7,7 +7,14 @@ class Unit:
         raise NotImplementedError
     
     def initialize_weights(self, number_of_weights):
-        self.weights = np.random.uniform(-0.7, 0.7, (number_of_weights + 1))
+        self.bias = np.random.uniform(-0.7, 0.7)
+        self.weights = np.random.uniform(-0.7, 0.7, number_of_weights)
+    
+    def compute_out(self):
+        return(self.activation.fwd(self.net))
+    
+    def compute_derivative(self):
+        return(self.activation.derivative(self.net))
 
 class InputUnit(Unit):
 
@@ -17,12 +24,16 @@ class InputUnit(Unit):
 class HiddenUnit(Unit):
 
     def __init__(self, activation: ActivationFunction):
+        self.bias = None
         self.weights = None
+        self.input = None
         self.net = 0
         self.activation = activation()
 
 class OutputUnit(Unit):
     def __init__(self, activation: ActivationFunction):
+        self.bias = None
         self.weights = None
+        self.input = None
         self.net = 0
         self.activation = activation()
