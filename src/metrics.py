@@ -20,6 +20,7 @@ def binary_accuracy(y_true, y_pred):
         raise ValueError("Shapes of y_true and y_pred must match.")
     
     y_pred = np.round(y_pred).astype(int)
+    #print(f"y_true = {y_true}, y_pred = {y_pred}")
     
     correct_predictions = np.sum(y_true == y_pred)
     return correct_predictions / len(y_true)

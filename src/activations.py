@@ -24,7 +24,7 @@ class Tanh(ActivationFunction):
     
 class ReLU(ActivationFunction):
     def fwd(self, input):
-        return(np.max(0, input))
+        return(np.maximum(0, input))
     
     def derivative(self, input):
         if (input > 0):
@@ -33,7 +33,7 @@ class ReLU(ActivationFunction):
     
 class Leaky_ReLU(ActivationFunction):
     def fwd(self, input):
-        return(max(0.1 * input, input))
+        return(np.maximum(0.1 * input, input))
     
     def derivative(self, input):
         if (input > 0):
@@ -46,7 +46,7 @@ class Softmax(ActivationFunction):
         return e_x / np.sum(e_x, axis=-1, keepdims=True)
 
     def derivative(self, input):
-        s = Softmax.fwd(input)
+        s = self.fwd(input)
     # Create a diagonal matrix of the softmax probabilities
         diag_s = np.diag(s)
     # Outer product of the softmax vector with itself

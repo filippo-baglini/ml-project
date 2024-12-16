@@ -36,6 +36,7 @@ def plot_data_error(trError:np.ndarray, valError:np.ndarray, firstName:str, seco
     plt.show()
 
 def provaplot(losses, accuracies, epochs):
+    print(plt.get_backend())
     # Plot loss curve
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
@@ -53,4 +54,5 @@ def provaplot(losses, accuracies, epochs):
     plt.title('Accuracy Curve')
     plt.legend()
 
-    plt.show()
+    plt.savefig('training_plot.png')  # Save as PNG file
+    plt.close()  # Close the plot to avoid memory issues
