@@ -1,17 +1,4 @@
 import numpy as np
-# class MSE:
-
-#     def __init__(self):
-        
-#         self.loss = 0
-    
-#     def mse(self, out, pred):
-
-#         self.loss += (out -pred) ** 2
-    
-#     def compute_loss(self):
-
-#         return (self.loss / self.counter)
 
 def binary_accuracy(y_true, y_pred):
     # print(y_true.shape)
@@ -26,6 +13,7 @@ def binary_accuracy(y_true, y_pred):
     return correct_predictions / len(y_true)
 
 def squared_loss(y_true, y_pred):
+    #AGGIUNGI LAMBDA CAZZI ALLA LOSS
     if y_true.shape != y_pred.shape:
         raise ValueError("Shapes of y_true and y_pred must match.")
     return (y_true - y_pred) ** 2

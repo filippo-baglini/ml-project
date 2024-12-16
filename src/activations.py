@@ -27,9 +27,7 @@ class ReLU(ActivationFunction):
         return(np.maximum(0, input))
     
     def derivative(self, input):
-        if (input > 0):
-            return 1
-        return 0
+        return np.where(input > 0, 1, 0)
     
 class Leaky_ReLU(ActivationFunction):
     def fwd(self, input):
