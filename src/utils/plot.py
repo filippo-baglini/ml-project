@@ -56,6 +56,6 @@ def provaplot(losses, accuracies, epochs):
     plt.title('Accuracy Curve')
     plt.legend()
 
-    plt.savefig('training_plot.png')  # Save as PNG file
-    #plt.show()
-    # plt.close()  # Close the plot to avoid memory issues
+    plt.show()
+    plt.close()  # Close the plot to avoid memory issues
+

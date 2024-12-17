@@ -13,9 +13,8 @@ class Dense_layer(Layer):
     def __init__(self, nInputs, nUnits, activation: ActivationFunction):
         
         self.weights = self.initialize_weights(nInputs, nUnits)
-        # print(self.weights.shape)
-        # print(self.weights)
-        self.biases = np.random.uniform(-0.7, 0.7, (1, nUnits))
+        #self.biases = np.random.uniform(-0.7, 0.7, (1, nUnits))
+        self.biases = self.initialize_weights(1, nUnits)
         self.activation = activation()
         self.input = np.array([])
         self.net = 0

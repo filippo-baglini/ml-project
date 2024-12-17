@@ -13,7 +13,9 @@ class FF_Neural_Network:
             learning_rate: float,
             regularized: Optional[Literal["Lasso", "Tikhonov"]] = None,
             lambda_par: Optional[float] = None,
-            momentum_par: Optional[float] = None
+            momentum_par: Optional[float] = None,
+            early_stopping_decrease: Optional[float] = None,
+            early_stopping_epochs: Optional[int] = None
             ):
 
         self.input_size = input_size
@@ -22,6 +24,9 @@ class FF_Neural_Network:
         self.regularized = regularized
         self.lambda_par = lambda_par
         self.momentum_par = momentum_par
+        self.past_grad = np.array([])
+        self.early_stopping_decrease = early_stopping_decrease
+        self.early_stopping_epochs = early_stopping_epochs
 
         # if (self.input_size != self.layers[0].weights.shape):
         #     raise RuntimeError("The input layer size and the input size must coincide")
@@ -34,58 +39,58 @@ class FF_Neural_Network:
         return out
     
     def bwd_computation(self, output, pred):
-        #IMPLEMENTA AMMODINO MOMENTUM
+       
         delta_prev_layer = np.array([])
         prev_layer = None
-        past_grad = None
+        current_grad = np.array([])
 
         for layer in reversed(self.layers):
             
             if (prev_layer == None): # Output layer
                 delta = np.subtract(output, pred) * layer.activation.derivative(layer.net)
+                #delta = np.sum(delta) / len(output)
             
             else: #Hidden layer
                 if layer.input.ndim == 1:
                     layer.input = layer.input.reshape(1, layer.input.shape[0])
                 delta = np.dot(delta_prev_layer, prev_layer.weights.T) * layer.activation.derivative(layer.net)
+                #delta = np.sum(delta) / len(output)
 
+            #Regularization
             if (self.regularized == "Tikhonov"):
                 regularization = 2 * self.lambda_par * layer.weights
                 grad = np.subtract(self.learning_rate * np.dot(layer.input.T, delta), regularization)
+                #grad = np.sum(grad)
             elif (self.regularized == "Lasso"):
                 regularization = self.lambda_par * np.sign(layer.weights)
                 grad = np.subtract(self.learning_rate * np.dot(layer.input.T, delta), regularization)
+                #grad = np.sum(grad)
             else:
                 grad = self.learning_rate * np.dot(layer.input.T, delta)
-            
-            if layer.weights.shape != grad.shape:
-                print("Reshaping weights to match grad")
-                layer.weights = np.zeros_like(grad)
+                #grad = np.sum(grad)
 
             bias_update = self.learning_rate * np.sum(delta, axis=0, keepdims=True) / len(output)
 
-            # Ensure biases have the correct shape
-            if layer.biases.shape != bias_update.shape:
-                print(f"Reshaping biases: layer.biases.shape={layer.biases.shape}, bias_update.shape={bias_update.shape}")
-                layer.biases = np.zeros_like(bias_update)
-
-            if (self.momentum_par):
-                layer.weights += grad + self.momentum_par * ...
+            #Momentum
+            if (self.momentum_par and self.past_grad.size != 0):
+                past_grad = self.past_grad[0]
+                self.past_grad = np.delete(self.past_grad, 0)
+                layer.weights += grad + self.momentum_par * past_grad
+                current_grad = np.append(current_grad, grad)
             else:
                 layer.weights += grad / len(output)
             layer.biases += bias_update
-            
+
             delta_prev_layer = delta
             prev_layer = layer
+        self.past_grad = current_grad
     
     def train(self, input, output, mode: Optional[Literal["Online", "Batch", "Minibatch"]] = "Batch", mb_number = None):
 
-        #print(mode)
         if (mode == 'Batch'):
-            #print("TRAINING BATCH")
-            pred = np.zeros(output.shape)
-            for i in range(len(input)):
-                pred[i] = self.fwd_computation(input[i])
+
+            pred = self.fwd_computation(input)
+            #print(pred)
             self.bwd_computation(output, pred)
         
         elif (mode == 'Minibatch'):
@@ -104,9 +109,7 @@ class FF_Neural_Network:
             output_batches = np.array_split(output, mb_number)
             for i, batch in enumerate(input_batches):
                 pred = np.zeros(batch.shape)
-                for j in range(len(batch)):
-                    pred[j] = self.fwd_computation(batch[j])
-                print(pred)
+                pred = self.fwd_computation(batch)
                 self.bwd_computation(output_batches[i], pred)
         
         elif (mode == "Online"):
@@ -116,11 +119,10 @@ class FF_Neural_Network:
 
             input = input[indices]
             output = output[indices]
-
+        
             for i in range(len(input)):
                 pred = self.fwd_computation(input[i])
                 self.bwd_computation(np.array([output[i]]), pred)
         
-
-
-
+        else:
+            raise RuntimeError(f"{mode} is not a training mode.")
