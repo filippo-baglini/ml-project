@@ -1,6 +1,10 @@
 import numpy as np
-from activations import *
-from layers import *
+from .activations import *
+from .layers import *
+from .learning_rate import *
+from .early_stopping import *
+from .metrics import *
+from .utils.plot import *
 from typing import List
 from typing import Optional, Literal, List
 
@@ -10,12 +14,11 @@ class FF_Neural_Network:
             self,
             input_size: int,
             layers: List[Layer],
-            learning_rate: float,
+            learning_rate: Learning_rate,
             regularized: Optional[Literal["Lasso", "Tikhonov"]] = None,
             lambda_par: Optional[float] = None,
             momentum_par: Optional[float] = None,
-            early_stopping_decrease: Optional[float] = None,
-            early_stopping_epochs: Optional[int] = None
+            early_stopping: Optional[Early_stopping] = None
             ):
 
         self.input_size = input_size
@@ -25,11 +28,10 @@ class FF_Neural_Network:
         self.lambda_par = lambda_par
         self.momentum_par = momentum_par
         self.past_grad = np.array([])
-        self.early_stopping_decrease = early_stopping_decrease
-        self.early_stopping_epochs = early_stopping_epochs
+        self.early_stopping = early_stopping
 
-        # if (self.input_size != self.layers[0].weights.shape):
-        #     raise RuntimeError("The input layer size and the input size must coincide")
+        if (self.input_size != self.layers[0].weights.shape[0]):
+             raise RuntimeError("The input layer size and the input size must coincide")
     
     def fwd_computation(self, input):
         out = np.array([])
@@ -46,30 +48,34 @@ class FF_Neural_Network:
 
         for layer in reversed(self.layers):
             
-            if (prev_layer == None): # Output layer
-                delta = np.subtract(output, pred) * layer.activation.derivative(layer.net)
-                #delta = np.sum(delta) / len(output)
+            if (pred.ndim == 2):
+                pred = pred.squeeze()
             
+            if (prev_layer == None): # Output layer
+                delta = (output - pred) * layer.activation.derivative(layer.net).squeeze()
+               
             else: #Hidden layer
                 if layer.input.ndim == 1:
                     layer.input = layer.input.reshape(1, layer.input.shape[0])
+                if delta_prev_layer.ndim == 1:
+                    delta_prev_layer = delta_prev_layer.reshape(delta_prev_layer.shape[0], 1)
                 delta = np.dot(delta_prev_layer, prev_layer.weights.T) * layer.activation.derivative(layer.net)
-                #delta = np.sum(delta) / len(output)
 
             #Regularization
             if (self.regularized == "Tikhonov"):
                 regularization = 2 * self.lambda_par * layer.weights
-                grad = np.subtract(self.learning_rate * np.dot(layer.input.T, delta), regularization)
-                #grad = np.sum(grad)
+                grad = np.subtract(self.learning_rate() * np.dot(layer.input.T, delta), regularization)
+
             elif (self.regularized == "Lasso"):
                 regularization = self.lambda_par * np.sign(layer.weights)
-                grad = np.subtract(self.learning_rate * np.dot(layer.input.T, delta), regularization)
-                #grad = np.sum(grad)
-            else:
-                grad = self.learning_rate * np.dot(layer.input.T, delta)
-                #grad = np.sum(grad)
+                grad = np.subtract(self.learning_rate() * np.dot(layer.input.T, delta), regularization)
 
-            bias_update = self.learning_rate * np.sum(delta, axis=0, keepdims=True) / len(output)
+            else:
+                grad = self.learning_rate() * np.dot(layer.input.T, delta)
+                if (grad.ndim == 1):
+                    grad = grad.reshape(grad.shape[0], 1)
+
+            bias_update = self.learning_rate() * np.sum(delta, axis=0, keepdims=True)
 
             #Momentum
             if (self.momentum_par and self.past_grad.size != 0):
@@ -77,52 +83,101 @@ class FF_Neural_Network:
                 self.past_grad = np.delete(self.past_grad, 0)
                 layer.weights += grad + self.momentum_par * past_grad
                 current_grad = np.append(current_grad, grad)
-            else:
-                layer.weights += grad / len(output)
-            layer.biases += bias_update
 
+            else:
+                layer.weights += grad
+
+            layer.biases += bias_update
             delta_prev_layer = delta
             prev_layer = layer
+
         self.past_grad = current_grad
     
-    def train(self, input, output, mode: Optional[Literal["Online", "Batch", "Minibatch"]] = "Batch", mb_number = None):
-
-        if (mode == 'Batch'):
-
-            pred = self.fwd_computation(input)
-            #print(pred)
-            self.bwd_computation(output, pred)
+    def train(
+            self,
+            input: np.ndarray,
+            output: np.ndarray, 
+            epochs: int, 
+            eval_input: Optional[np.ndarray] = None,
+            eval_output: Optional[np.ndarray] = None,
+            mode: Optional[Literal["Online", "Batch", "Minibatch"]] = "Batch",
+            mb_number = None
+            ):
         
-        elif (mode == 'Minibatch'):
-            print("TRAINING MINIBATCH")
-            if (mb_number == None):
-                raise RuntimeError("If you want to train using minibatch you need to specify the number of batches.")
+        train_losses = []
+        train_accuracies = []
+        eval_losses = []
+        eval_accuracies = []
+        early_stopping_epoch = epochs - 1
 
-            # Shuffle input and output together to prevent sample ordering bias
-            indices = np.arange(len(input))
-            np.random.shuffle(indices)
+        for epoch in range(epochs):
+            predictions = np.array([])
 
-            input = input[indices]
-            output = output[indices]
+            if (mode == 'Batch'):
+                pred = self.fwd_computation(input)
+                predictions = pred
+                self.bwd_computation(output, pred)
+            
+            elif (mode == 'Minibatch'):
+                if (mb_number == None):
+                    raise RuntimeError("If you want to train using minibatch you need to specify the number of batches.")
 
-            input_batches = np.array_split(input, mb_number)
-            output_batches = np.array_split(output, mb_number)
-            for i, batch in enumerate(input_batches):
-                pred = np.zeros(batch.shape)
-                pred = self.fwd_computation(batch)
-                self.bwd_computation(output_batches[i], pred)
+                # Shuffle input and output together to prevent sample ordering bias
+                indices = np.arange(len(input))
+                np.random.shuffle(indices)
+
+                input = input[indices]
+                output = output[indices]
+                input_batches = np.array_split(input, mb_number)
+                output_batches = np.array_split(output, mb_number)
+                
+                for i, batch in enumerate(input_batches):
+                    pred = self.fwd_computation(batch)
+                    predictions = np.append(predictions, pred)
+                    self.bwd_computation(output_batches[i], pred)
+            
+            elif (mode == "Online"):
+                #Shuffle input and output together to prevent sample ordering bias
+                indices = np.arange(len(input))
+                np.random.shuffle(indices)
+
+                input = input[indices]
+                output = output[indices]
+            
+                for i in range(len(input)):
+                    pred = self.fwd_computation(input[i])
+                    predictions = np.append(predictions, pred)
+                    self.bwd_computation(np.array([output[i]]), pred)
+            
+            else:
+                raise RuntimeError(f"{mode} is not a training mode.")
+
+            train_acc = compute_accuracy(output, predictions.reshape(predictions.shape[0]))
+            train_loss = mean_squared_error(output, predictions.reshape(predictions.shape[0]))
+            train_losses.append(train_loss)
+            train_accuracies.append(train_acc)
+
+            #Evaluation and early stopping
+            if (eval_input is not None and eval_output is not None):
+                eval_acc = compute_accuracy(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]))
+                eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]))
+                if (self.early_stopping is not None):
+                    if (self.early_stopping(eval_losses, eval_loss)):
+                        print(f"Early stopping activated, halting training at epoch {epoch}.")
+                        early_stopping_epoch = epoch
+                        eval_losses.append(eval_loss)
+                        eval_accuracies.append(eval_acc)
+                        break
+                eval_losses.append(eval_loss)
+                eval_accuracies.append(eval_acc)
+            
+            if (epoch % 100 == 0 or epoch == epochs - 1):
+                print(f"Training Accuracy at epoch {epoch + 1} = {train_acc:.4f}")
+                print(f"Training Loss at epoch: {epoch + 1} = {train_loss:.4f}")
+                if (eval_input is not None and eval_output is not None):
+                    print(f"Validation Accuracy at epoch {epoch + 1} = {eval_acc:.4f}")
+                    print(f"Validation Loss at epoch: {epoch + 1} = {eval_loss:.4f}")
         
-        elif (mode == "Online"):
-            #Shuffle input and output together to prevent sample ordering bias
-            indices = np.arange(len(input))
-            np.random.shuffle(indices)
-
-            input = input[indices]
-            output = output[indices]
-        
-            for i in range(len(input)):
-                pred = self.fwd_computation(input[i])
-                self.bwd_computation(np.array([output[i]]), pred)
-        
-        else:
-            raise RuntimeError(f"{mode} is not a training mode.")
+        provaplot(train_losses, train_accuracies, early_stopping_epoch + 1)
+        if (eval_input is not None and eval_output is not None):
+            provaplot(eval_losses, eval_accuracies, early_stopping_epoch + 1)

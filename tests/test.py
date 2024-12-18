@@ -5,11 +5,11 @@ sys.path.append(os.path.join(sys.path[0], '..'))
 from utils.data_utils import *
 from utils.plot import *
 from utils.train_val_split import train_val_splitter
-from nn import FF_Neural_Network
-from layers import *
-from learning_rate import *
-from metrics import *
-from activations import *
+from src.nn import FF_Neural_Network
+from src.layers import *
+from src.learning_rate import *
+from src.metrics import *
+from src.activations import *
 import numpy as np
 
 script_dir = os.path.dirname(__file__)

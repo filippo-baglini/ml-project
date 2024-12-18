@@ -7,6 +7,13 @@ class ActivationFunction:
     def derivative(self):
         raise NotImplementedError
     
+class Linear(ActivationFunction):
+    def fwd(self, input):
+        return input
+    
+    def derivative(self, input):
+        return np.ones_like(input)
+    
 class Logistic(ActivationFunction):
     def fwd(self, input, alfa = 1):
         return (1 / (1 + np.exp(-alfa * input)))
@@ -31,12 +38,10 @@ class ReLU(ActivationFunction):
     
 class Leaky_ReLU(ActivationFunction):
     def fwd(self, input):
-        return(np.maximum(0.1 * input, input))
+        return(np.maximum(0.01 * input, input))
     
     def derivative(self, input):
-        if (input > 0):
-            return 1
-        return 0.01
+        return np.where(input > 0, 1, 0.01)
     
 class Softmax(ActivationFunction):
     def fwd(self, input):
