@@ -28,25 +28,28 @@ def compute_accuracy(y_true, y_pred, activation_function="sigmoid", threshold=0.
     if y_true.shape != y_pred.shape:
         raise ValueError("Shapes of y_true and y_pred must match.")
     
-    if activation_function == "sigmoid":
+    # Initialize predicted labels
+    predicted_labels = None
+
+    if activation_function == "Logistic":
         # Threshold predictions for binary classification
         predicted_labels = (y_pred > threshold).astype(int)
     
-    elif activation_function == "tanh":
+    elif activation_function == "Tanh":
         # Threshold predictions at 0 for binary classification
         predicted_labels = (y_pred > 0).astype(int)  # Map Tanh to {0, 1}
+        
+        # Convert y_true to {0, 1} if labels are {-1, 1}
         if np.any((y_true != 0) & (y_true != 1)):
-            # Convert y_true to {0, 1} if labels are {-1, 1}
             y_true = (y_true > 0).astype(int)
     
-    elif activation_function == "softmax":
+    elif activation_function == "Softmax":
         # For multi-class classification, take the argmax
         predicted_labels = np.argmax(y_pred, axis=1)
         y_true = np.argmax(y_true, axis=1)  # One-hot encoded ground truth to class indices
     
-    elif activation_function == "linear":
+    elif activation_function == "Linear":
         # For regression tasks, accuracy might not be meaningful.
-        # You could define a threshold for "close enough" predictions.
         raise ValueError("Accuracy is not typically defined for regression tasks.")
     
     else:

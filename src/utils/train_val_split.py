@@ -1,6 +1,6 @@
 import numpy as np
 
-def train_val_splitter(input_data: np.ndarray, output_data: np.ndarray, perc_val_data: float):
+def train_val_splitter (input_data: np.ndarray, output_data: np.ndarray, perc_val_data: float):
 
     indices = np.arange(len(input_data))
     np.random.shuffle(indices)
@@ -16,3 +16,6 @@ def train_val_splitter(input_data: np.ndarray, output_data: np.ndarray, perc_val
     val_output = output_data[split_index:]  
 
     return train_input, val_input, train_output, val_output
+
+def hold_out_splitter (input_data: np.ndarray, output_data: np.ndarray, perc_val_data: float, perc_test_data: float):
+    pass

@@ -16,3 +16,9 @@ class Early_stopping:
             else:
                 self.counter = 0
         return False
+    
+    def __str__(self):
+        return (
+            f"Early_stopping(patience={self.patience}, "
+            f"minimum_decrease={self.minimum_decrease})"
+        )

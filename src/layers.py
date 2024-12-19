@@ -33,6 +33,7 @@ class Dense_layer(Layer):
             initialization_technique: Optional[Literal["Normal Xavier", "Uniform Xavier", "He"]] = None
             ):
         
+        self.initialization_technique = initialization_technique
         self.weights = self.initialize_weights(nInputs, nUnits, initialization_technique)
         self.biases = self.initialize_weights(1, nUnits, None)
         self.activation = activation()
@@ -43,3 +44,11 @@ class Dense_layer(Layer):
         self.input = input
         self.net = self.biases + np.dot(input, self.weights)
         return self.activation.fwd(self.net)
+    
+    def __str__(self):
+        return (
+            f"Dense_layer(nInputs={self.weights.shape[0]}, "
+            f"nUnits={self.weights.shape[1]}, "
+            f"activation={self.activation.__class__.__name__}, "
+            f"initialization_technique={self.initialization_technique})"
+        )

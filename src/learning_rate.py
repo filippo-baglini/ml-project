@@ -12,6 +12,9 @@ class Learning_rate:
     def __call__(self):
         return self.eta
     
+    def __str__(self):
+        return f"Learning_rate(eta={self.eta})"
+    
 class Linear_decay_learning_rate(Learning_rate):
 
     def __init__(self, eta_start, eta_tau, tau):
@@ -35,3 +38,9 @@ class Linear_decay_learning_rate(Learning_rate):
         self.counter += 1
         eta = (1 - (self.counter / self.tau)) * self.eta_start + (self.counter / self.tau) * self.eta_tau
         return eta
+    
+    def __str__(self):
+        return (
+            f"Linear_decay_learning_rate(eta_start={self.eta_start}, "
+            f"eta_tau={self.eta_tau}, tau={self.tau})"
+        )

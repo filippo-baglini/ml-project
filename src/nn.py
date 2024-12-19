@@ -52,7 +52,7 @@ class FF_Neural_Network:
                 pred = pred.squeeze()
             
             if (prev_layer == None): # Output layer
-                delta = (output - pred) * layer.activation.derivative(layer.net).squeeze()
+                delta = (pred - output) * layer.activation.derivative(layer.net).squeeze()
                
             else: #Hidden layer
                 if layer.input.ndim == 1:
@@ -64,12 +64,17 @@ class FF_Neural_Network:
             #Regularization
             if (self.regularized == "Tikhonov"):
                 regularization = 2 * self.lambda_par * layer.weights
-                grad = np.subtract(self.learning_rate() * np.dot(layer.input.T, delta), regularization)
+                grad = self.learning_rate() * np.dot(layer.input.T, delta)
+                if (grad.ndim == 1):
+                    grad = grad.reshape(grad.shape[0], 1)
+                grad -= regularization
 
             elif (self.regularized == "Lasso"):
                 regularization = self.lambda_par * np.sign(layer.weights)
-                grad = np.subtract(self.learning_rate() * np.dot(layer.input.T, delta), regularization)
-
+                grad = self.learning_rate() * np.dot(layer.input.T, delta)
+                if (grad.ndim == 1):
+                    grad = grad.reshape(grad.shape[0], 1)
+                grad -= regularization
             else:
                 grad = self.learning_rate() * np.dot(layer.input.T, delta)
                 if (grad.ndim == 1):
@@ -81,13 +86,13 @@ class FF_Neural_Network:
             if (self.momentum_par and self.past_grad.size != 0):
                 past_grad = self.past_grad[0]
                 self.past_grad = np.delete(self.past_grad, 0)
-                layer.weights += grad + self.momentum_par * past_grad
+                layer.weights -= grad + self.momentum_par * past_grad
                 current_grad = np.append(current_grad, grad)
 
             else:
-                layer.weights += grad
+                layer.weights -= grad
 
-            layer.biases += bias_update
+            layer.biases -= bias_update
             delta_prev_layer = delta
             prev_layer = layer
 
@@ -152,14 +157,14 @@ class FF_Neural_Network:
             else:
                 raise RuntimeError(f"{mode} is not a training mode.")
 
-            train_acc = compute_accuracy(output, predictions.reshape(predictions.shape[0]))
+            train_acc = compute_accuracy(output, predictions.reshape(predictions.shape[0]), type(self.layers[-1].activation).__name__)
             train_loss = mean_squared_error(output, predictions.reshape(predictions.shape[0]))
             train_losses.append(train_loss)
             train_accuracies.append(train_acc)
 
             #Evaluation and early stopping
             if (eval_input is not None and eval_output is not None):
-                eval_acc = compute_accuracy(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]))
+                eval_acc = compute_accuracy(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]), type(self.layers[-1].activation).__name__)
                 eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]))
                 if (self.early_stopping is not None):
                     if (self.early_stopping(eval_losses, eval_loss)):
@@ -178,6 +183,24 @@ class FF_Neural_Network:
                     print(f"Validation Accuracy at epoch {epoch + 1} = {eval_acc:.4f}")
                     print(f"Validation Loss at epoch: {epoch + 1} = {eval_loss:.4f}")
         
-        provaplot(train_losses, train_accuracies, early_stopping_epoch + 1)
+        # provaplot(train_losses, train_accuracies, early_stopping_epoch + 1)
+        # if (eval_input is not None and eval_output is not None):
+        #     provaplot(eval_losses, eval_accuracies, early_stopping_epoch + 1)
         if (eval_input is not None and eval_output is not None):
-            provaplot(eval_losses, eval_accuracies, early_stopping_epoch + 1)
+            return eval_losses, eval_accuracies
+        return 
+    
+    def __str__(self):
+        layer_descriptions = "\n".join(
+            [f"Layer {i + 1}: {layer}" for i, layer in enumerate(self.layers)]
+        )
+        return (
+            f"FF_Neural_Network:\n"
+            f"Input size: {self.input_size}\n"
+            f"Layers:\n{layer_descriptions}\n"
+            f"Learning rate: {self.learning_rate}\n"
+            f"Regularization: {self.regularized or 'None'}\n"
+            f"Lambda parameter: {self.lambda_par or 'None'}\n"
+            f"Momentum parameter: {self.momentum_par or 'None'}\n"
+            f"Early stopping: {self.early_stopping or 'None'}"
+        )
