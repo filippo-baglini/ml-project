@@ -1,4 +1,4 @@
-from monk_keras.monk_model import MonkModel
+from oracle.monk.monk_model import MonkModel
 
 monk = MonkModel(num_dataset=3)
 
