@@ -18,7 +18,7 @@ class Layer:
              return np.random.randn(nInputs, nUnits) * np.sqrt(2 / nInputs)
         
         elif (initialization_technique is None):
-            return np.random.uniform(-0.7, 0.7, (nInputs, nUnits))
+            return np.random.uniform(-0.5, 0.5, (nInputs, nUnits))
 
         else:
             raise RuntimeError("Invalid weight initialization technique.")
@@ -33,6 +33,8 @@ class Dense_layer(Layer):
             initialization_technique: Optional[Literal["Normal Xavier", "Uniform Xavier", "He"]] = None
             ):
         
+        self.num_inputs = nInputs
+        self.num_units = nUnits
         self.initialization_technique = initialization_technique
         self.weights = self.initialize_weights(nInputs, nUnits, initialization_technique)
         self.biases = self.initialize_weights(1, nUnits, None)

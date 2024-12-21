@@ -11,7 +11,7 @@ def binary_accuracy(y_true, y_pred):
     correct_predictions = np.sum(y_true == y_pred)
     return correct_predictions / len(y_true)
 
-def compute_accuracy(y_true, y_pred, activation_function="sigmoid", threshold=0.5):
+def compute_accuracy(y_true, y_pred, activation_function="Logistic", threshold=0.5):
     """
     Compute accuracy for a neural network with an arbitrary activation function in the output layer.
 
@@ -60,10 +60,25 @@ def compute_accuracy(y_true, y_pred, activation_function="sigmoid", threshold=0.
     return correct_predictions / len(y_true)
 
 def squared_loss(y_true, y_pred):
-    #AGGIUNGI LAMBDA CAZZI ALLA LOSS
+    
     if y_true.shape != y_pred.shape:
         raise ValueError("Shapes of y_true and y_pred must match.")
     return (y_true - y_pred) ** 2
 
-def mean_squared_error(y_true, y_pred):
-    return np.mean(squared_loss(y_true, y_pred))
+def mean_squared_error(y_true, y_pred, weights = None, regularization = None, lambda_par = None):
+    
+    # Compute the mean squared error
+    mse = np.mean(squared_loss(y_true, y_pred))
+
+    # Add regularization penalty
+    penalty = 0.0
+    if (weights is not None and regularization is not None):
+        
+        if (regularization == "Tikhonov"):
+            penalty = lambda_par * np.sum([np.sum(w ** 2) for w in weights])
+        elif (regularization == "Lasso"):
+            penalty = lambda_par * np.sum([np.sum(np.abs(w)) for w in weights])
+        else:
+            raise RuntimeError(f"Unsupported regularization type: {regularization}")
+    
+    return mse + penalty

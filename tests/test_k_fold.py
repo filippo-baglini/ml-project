@@ -3,8 +3,9 @@ import os
 sys.path.append(os.path.join(sys.path[0], '..'))
 
 from src.utils.data_utils import *
+from src.utils.grid_search import *
 from src.utils.plot import *
-from src.utils.train_val_split import train_val_splitter
+from src.utils.data_split import train_val_splitter
 from src.nn import FF_Neural_Network
 from src.layers import *
 from src.learning_rate import *
@@ -25,18 +26,7 @@ x_test, y_true = read_monk_data(monk_1_test)
 x = feature_one_hot_encoding(x, [3,3,2,3,4,2])
 x_test = feature_one_hot_encoding(x_test, [3,3,2,3,4,2])
 
-x_train, x_val, y_train, y_val = train_val_splitter(x, y, 0.3)
-
-nn = FF_Neural_Network(17, [Dense_layer(17, 4, Leaky_ReLU), Dense_layer(4, 1, Tanh)], Learning_rate(0.01), "Lasso", 0.00001, None, Early_stopping(100, 0.0001))
-
-print(type(nn.layers[-1].activation).__name__)
-
-nn.train(x_train, y_train, 700, x_val, y_val, 'Minibatch', 5)
-
-y_test = np.array([])
-for i in range(len(x_test)):
-    y_test = np.append(y_test, nn.fwd_computation(x_test[i]))
-accuracy = compute_accuracy(y_true, y_test, type(nn.layers[-1].activation).__name__)
-prova_loss = mean_squared_error(y_true, y_test)
-print(f"Test accuracy: {accuracy}")
-print(f"Test loss: {prova_loss}")
+shuffle_data(x, y) #just to shuffle them and prevent some ordering bias
+x, y = k_fold_splitter(x, y, 4) #should split x, y in folds
+print(x)
+print(y)

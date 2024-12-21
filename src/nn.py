@@ -2,9 +2,11 @@ import numpy as np
 from .activations import *
 from .layers import *
 from .learning_rate import *
+from .momentum import *
 from .early_stopping import *
 from .metrics import *
 from .utils.plot import *
+from .utils.data_split import shuffle_data
 from typing import List
 from typing import Optional, Literal, List
 
@@ -17,7 +19,7 @@ class FF_Neural_Network:
             learning_rate: Learning_rate,
             regularized: Optional[Literal["Lasso", "Tikhonov"]] = None,
             lambda_par: Optional[float] = None,
-            momentum_par: Optional[float] = None,
+            momentum: Optional[Momentum] = None,
             early_stopping: Optional[Early_stopping] = None
             ):
 
@@ -26,7 +28,7 @@ class FF_Neural_Network:
         self.learning_rate = learning_rate
         self.regularized = regularized
         self.lambda_par = lambda_par
-        self.momentum_par = momentum_par
+        self.momentum = momentum
         self.past_grad = np.array([])
         self.early_stopping = early_stopping
 
@@ -48,18 +50,40 @@ class FF_Neural_Network:
 
         for layer in reversed(self.layers):
             
+            grad = 0
+
             if (pred.ndim == 2):
                 pred = pred.squeeze()
             
             if (prev_layer == None): # Output layer
-                delta = (pred - output) * layer.activation.derivative(layer.net).squeeze()
+                #Nesterov momentum
+                if (isinstance(self.momentum, Nesterov_momentum) and self.past_grad.size != 0):
+                    #print("ENTRATO IF")
+                    past_grad = self.past_grad[0]
+                    self.past_grad = np.delete(self.past_grad, 0)
+                    weights = layer.weights + self.momentum() * past_grad
+                    delta = (pred - output) * layer.activation.derivative(np.dot(layer.input, weights)).squeeze()
+                else:
+                    #print("ENTRATO ELSE")
+                    delta = (pred - output) * layer.activation.derivative(layer.net).squeeze()
+                    # print(f"DELTA = {delta}")
+                    # print(delta.shape)
                
             else: #Hidden layer
                 if layer.input.ndim == 1:
                     layer.input = layer.input.reshape(1, layer.input.shape[0])
                 if delta_prev_layer.ndim == 1:
                     delta_prev_layer = delta_prev_layer.reshape(delta_prev_layer.shape[0], 1)
-                delta = np.dot(delta_prev_layer, prev_layer.weights.T) * layer.activation.derivative(layer.net)
+                #Nesterov momentum
+                if (isinstance(self.momentum, Nesterov_momentum) and self.past_grad.size != 0):
+                    print("ENTRATO IF")
+                    past_grad = self.past_grad[0]
+                    self.past_grad = np.delete(self.past_grad, 0)
+                    weights = layer.weights + self.momentum() * past_grad
+                    delta = np.dot(delta_prev_layer, weights.T) * layer.activation.derivative(np.dot(layer.input, weights))
+                else:
+                    #print("ENTRATO ELSE")
+                    delta = np.dot(delta_prev_layer, prev_layer.weights.T) * layer.activation.derivative(layer.net)
 
             #Regularization
             if (self.regularized == "Tikhonov"):
@@ -67,26 +91,27 @@ class FF_Neural_Network:
                 grad = self.learning_rate() * np.dot(layer.input.T, delta)
                 if (grad.ndim == 1):
                     grad = grad.reshape(grad.shape[0], 1)
-                grad -= regularization
-
+                grad += regularization
             elif (self.regularized == "Lasso"):
                 regularization = self.lambda_par * np.sign(layer.weights)
                 grad = self.learning_rate() * np.dot(layer.input.T, delta)
                 if (grad.ndim == 1):
                     grad = grad.reshape(grad.shape[0], 1)
-                grad -= regularization
+                grad += regularization
             else:
                 grad = self.learning_rate() * np.dot(layer.input.T, delta)
+                #print(f"GRAD: {grad}")
                 if (grad.ndim == 1):
                     grad = grad.reshape(grad.shape[0], 1)
+                #print(grad.shape)
 
             bias_update = self.learning_rate() * np.sum(delta, axis=0, keepdims=True)
 
             #Momentum
-            if (self.momentum_par and self.past_grad.size != 0):
+            if (not isinstance(self.momentum, Nesterov_momentum) and isinstance(self.momentum, Momentum) and self.past_grad.size != 0):
                 past_grad = self.past_grad[0]
                 self.past_grad = np.delete(self.past_grad, 0)
-                layer.weights -= grad + self.momentum_par * past_grad
+                layer.weights -= grad + self.momentum() * past_grad
                 current_grad = np.append(current_grad, grad)
 
             else:
@@ -103,6 +128,7 @@ class FF_Neural_Network:
             input: np.ndarray,
             output: np.ndarray, 
             epochs: int, 
+            plot: bool = False,
             eval_input: Optional[np.ndarray] = None,
             eval_output: Optional[np.ndarray] = None,
             mode: Optional[Literal["Online", "Batch", "Minibatch"]] = "Batch",
@@ -128,6 +154,7 @@ class FF_Neural_Network:
                     raise RuntimeError("If you want to train using minibatch you need to specify the number of batches.")
 
                 # Shuffle input and output together to prevent sample ordering bias
+                #shuffle_data(input, output)
                 indices = np.arange(len(input))
                 np.random.shuffle(indices)
 
@@ -143,6 +170,7 @@ class FF_Neural_Network:
             
             elif (mode == "Online"):
                 #Shuffle input and output together to prevent sample ordering bias
+                #shuffle_data(input, output)
                 indices = np.arange(len(input))
                 np.random.shuffle(indices)
 
@@ -158,17 +186,26 @@ class FF_Neural_Network:
                 raise RuntimeError(f"{mode} is not a training mode.")
 
             train_acc = compute_accuracy(output, predictions.reshape(predictions.shape[0]), type(self.layers[-1].activation).__name__)
-            train_loss = mean_squared_error(output, predictions.reshape(predictions.shape[0]))
+            if self.regularized:
+                weights = weights = [layer.weights for layer in self.layers]
+                train_loss = mean_squared_error(output, predictions.reshape(predictions.shape[0]), weights, self.regularized, self.lambda_par)
+            else:
+                train_loss =  mean_squared_error(output, predictions.reshape(predictions.shape[0]))
             train_losses.append(train_loss)
             train_accuracies.append(train_acc)
 
             #Evaluation and early stopping
             if (eval_input is not None and eval_output is not None):
+                eval_loss = 0
                 eval_acc = compute_accuracy(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]), type(self.layers[-1].activation).__name__)
-                eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]))
+                if (self.regularized):
+                    weights = weights = [layer.weights for layer in self.layers]
+                    eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]), weights, self.regularized, self.lambda_par)
+                else:
+                    eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]))
                 if (self.early_stopping is not None):
                     if (self.early_stopping(eval_losses, eval_loss)):
-                        print(f"Early stopping activated, halting training at epoch {epoch}.")
+                        #print(f"Early stopping activated, halting training at epoch {epoch}.")
                         early_stopping_epoch = epoch
                         eval_losses.append(eval_loss)
                         eval_accuracies.append(eval_acc)
@@ -176,19 +213,27 @@ class FF_Neural_Network:
                 eval_losses.append(eval_loss)
                 eval_accuracies.append(eval_acc)
             
-            if (epoch % 100 == 0 or epoch == epochs - 1):
-                print(f"Training Accuracy at epoch {epoch + 1} = {train_acc:.4f}")
-                print(f"Training Loss at epoch: {epoch + 1} = {train_loss:.4f}")
-                if (eval_input is not None and eval_output is not None):
-                    print(f"Validation Accuracy at epoch {epoch + 1} = {eval_acc:.4f}")
-                    print(f"Validation Loss at epoch: {epoch + 1} = {eval_loss:.4f}")
+            # if (epoch % 100 == 0 or epoch == epochs - 1):
+            #     print(f"Training Accuracy at epoch {epoch + 1} = {train_acc:.4f}")
+            #     print(f"Training Loss at epoch: {epoch + 1} = {train_loss:.4f}")
+            #     if (eval_input is not None and eval_output is not None):
+            #         print(f"Validation Accuracy at epoch {epoch + 1} = {eval_acc:.4f}")
+            #         print(f"Validation Loss at epoch: {epoch + 1} = {eval_loss:.4f}")
         
-        # provaplot(train_losses, train_accuracies, early_stopping_epoch + 1)
-        # if (eval_input is not None and eval_output is not None):
-        #     provaplot(eval_losses, eval_accuracies, early_stopping_epoch + 1)
+        if (plot):
+            provaplot(train_losses, train_accuracies, early_stopping_epoch + 1)
+            if (eval_input is not None and eval_output is not None):
+                provaplot(eval_losses, eval_accuracies, early_stopping_epoch + 1)
+
         if (eval_input is not None and eval_output is not None):
             return eval_losses, eval_accuracies
         return 
+    
+    def reset (self):
+        """Method to allow resetting the weights to retrain a model"""
+
+        for layer in self.layers:
+            layer.weights = layer.initialize_weights(layer.num_inputs, layer.num_units, layer.initialization_technique)
     
     def __str__(self):
         layer_descriptions = "\n".join(
@@ -201,6 +246,6 @@ class FF_Neural_Network:
             f"Learning rate: {self.learning_rate}\n"
             f"Regularization: {self.regularized or 'None'}\n"
             f"Lambda parameter: {self.lambda_par or 'None'}\n"
-            f"Momentum parameter: {self.momentum_par or 'None'}\n"
+            f"Momentum parameter: {self.momentum or 'None'}\n"
             f"Early stopping: {self.early_stopping or 'None'}"
         )

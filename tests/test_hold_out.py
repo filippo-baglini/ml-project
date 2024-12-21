@@ -5,7 +5,7 @@ sys.path.append(os.path.join(sys.path[0], '..'))
 from src.utils.data_utils import *
 from src.utils.grid_search import *
 from src.utils.plot import *
-from src.utils.train_val_split import train_val_splitter
+from src.utils.data_split import train_val_splitter
 from src.nn import FF_Neural_Network
 from src.layers import *
 from src.learning_rate import *
@@ -17,8 +17,8 @@ import numpy as np
 script_dir = os.path.dirname(__file__)
 
 # Construct the relative path to the data file
-monk_1_train = os.path.join(script_dir, "../data/Monk/monks-3.train")
-monk_1_test = os.path.join(script_dir, "../data/Monk/monks-3.test")
+monk_1_train = os.path.join(script_dir, "../data/Monk/monks-1.train")
+monk_1_test = os.path.join(script_dir, "../data/Monk/monks-1.test")
 
 # Read the data using the constructed path
 x, y =  read_monk_data(monk_1_train)
@@ -29,6 +29,9 @@ x_test = feature_one_hot_encoding(x_test, [3,3,2,3,4,2])
 x_train, x_eval, y_train, y_eval = train_val_splitter(x, y, 0.3)
 
 nn = grid_search_hold_out(x_train, y_train, x_eval, y_eval)
+nn.reset()
+
+nn.train(x, y, 300, plot = True)
 
 y_test = np.array([])
 for i in range(len(x_test)):
