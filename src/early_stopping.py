@@ -10,19 +10,13 @@ class Early_stopping:
 
     def __call__(self, eval_losses, eval_loss):
         if (len(eval_losses) != 0):
-        #     if (eval_losses[-1] - eval_loss < self.minimum_decrease):
-        #         self.counter += 1
-        #         if (self.counter == self.patience):
-        #             return True
-        #     else:
-        #         self.counter = 0
-        # return False
             if eval_loss < self.best_loss - self.minimum_decrease:
                 self.best_loss = eval_loss
                 self.counter = 0  # Reset counter
             else:
                 self.counter += 1  # Increment counter
             return self.counter >= self.patience
+        
         else:
             self.best_loss = eval_loss
             return False

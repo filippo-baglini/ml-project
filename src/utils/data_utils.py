@@ -39,3 +39,23 @@ def feature_one_hot_encoding(y, classes):
                 prev_classes = int(np.sum(classes[0:j]))
                 one_hot[i, prev_classes + y[i,j] - 1] = 1
     return one_hot
+
+def readTrainingCupData(filename:str):
+    input = []
+    output = []
+    with open(filename, "r") as file:
+        for line in file:
+            if line.startswith('#'): continue
+            values = list(map(float, line.split(',')[1:]))
+            input.append(values[0:-3])
+            output.append(values[-3:])
+    return np.array(input), np.array(output)
+
+def readTestCupData(filename:str) -> np.ndarray:
+    input = []
+    with open(filename, 'r') as file:
+        for line in file:
+            if line.startswith('#'): continue
+            values = list(map(float, line.split(',')[1:]))
+            input.append(values)
+    return input

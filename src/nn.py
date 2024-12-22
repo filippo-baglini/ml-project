@@ -29,8 +29,8 @@ class FF_Neural_Network:
         self.regularized = regularized
         self.lambda_par = lambda_par
         self.momentum = momentum
-        self.past_grad = np.array([])
         self.early_stopping = early_stopping
+        self.past_grad = np.array([])
 
         if (self.input_size != self.layers[0].weights.shape[0]):
              raise RuntimeError("The input layer size and the input size must coincide")
@@ -97,7 +97,7 @@ class FF_Neural_Network:
                 if (grad.ndim == 1):
                     grad = grad.reshape(grad.shape[0], 1)
 
-            grad = np.clip(grad, -0.5, 0.5)
+            grad = np.clip(grad, -0.3, 0.3)
 
             bias_update = self.learning_rate() * np.sum(delta, axis=0, keepdims=True)
 
@@ -136,7 +136,11 @@ class FF_Neural_Network:
         early_stopping_epoch = epochs - 1
 
         for epoch in range(epochs):
-            predictions = np.array([])
+
+            if (output.ndim != 1): 
+                predictions = np.empty((0, output.shape[1]))
+            else:
+                predictions = np.array([])
 
             if (mode == 'Batch'):
                 pred = self.fwd_computation(input)
@@ -164,7 +168,7 @@ class FF_Neural_Network:
             
                 for i in range(len(input)):
                     pred = self.fwd_computation(input[i])
-                    predictions = np.append(predictions, pred)
+                    predictions = np.vstack([predictions, pred])
                     self.bwd_computation(np.array([output[i]]), pred)
             
             else:
@@ -173,9 +177,9 @@ class FF_Neural_Network:
             train_acc = compute_accuracy(output, predictions.reshape(predictions.shape[0]), type(self.layers[-1].activation).__name__)
             if self.regularized:
                 weights = weights = [layer.weights for layer in self.layers]
-                train_loss = mean_squared_error(output, predictions.reshape(predictions.shape[0]), weights, self.regularized, self.lambda_par)
+                train_loss = mean_squared_error(output, predictions, weights, self.regularized, self.lambda_par)
             else:
-                train_loss =  mean_squared_error(output, predictions.reshape(predictions.shape[0]))
+                train_loss =  mean_squared_error(output, predictions)
             train_losses.append(train_loss)
             train_accuracies.append(train_acc)
 
@@ -185,9 +189,9 @@ class FF_Neural_Network:
                 eval_acc = compute_accuracy(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]), type(self.layers[-1].activation).__name__)
                 if (self.regularized):
                     weights = weights = [layer.weights for layer in self.layers]
-                    eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]), weights, self.regularized, self.lambda_par)
+                    eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input), weights, self.regularized, self.lambda_par)
                 else:
-                    eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]))
+                    eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input))
                 if (self.early_stopping is not None):
                     if (self.early_stopping(eval_losses, eval_loss)):
                         #print(f"Early stopping activated, halting training at epoch {epoch}.")
@@ -206,9 +210,9 @@ class FF_Neural_Network:
             #         print(f"Validation Loss at epoch: {epoch + 1} = {eval_loss:.4f}")
         
         if (plot):
-            provaplot(train_losses, train_accuracies, early_stopping_epoch + 1)
+            provaplot(train_losses, train_losses, early_stopping_epoch + 1)
             if (eval_input is not None and eval_output is not None):
-                provaplot(eval_losses, eval_accuracies, early_stopping_epoch + 1)
+                provaplot(eval_losses, eval_losses, early_stopping_epoch + 1)
 
         if (eval_input is not None and eval_output is not None):
             return eval_losses, eval_accuracies

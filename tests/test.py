@@ -22,16 +22,19 @@ monk_1_test = os.path.join(script_dir, "../data/Monk/monks-1.test")
 
 # Read the data using the constructed path
 x, y =  read_monk_data(monk_1_train)
+y = (2 * y - 1)
 x_test, y_true = read_monk_data(monk_1_test)
+y_true = (2 * y_true - 1)
 x = feature_one_hot_encoding(x, [3,3,2,3,4,2])
 x_test = feature_one_hot_encoding(x_test, [3,3,2,3,4,2])
 
-x_train, x_val, y_train, y_val = train_val_splitter(x, y, 0)
+x_train, x_val, y_train, y_val = train_val_splitter(x, y, 0.3)
 
-nn = FF_Neural_Network(17, [Dense_layer(17, 4, Tanh), Dense_layer(4,  1, Logistic)], Learning_rate(0.03), None, None, Momentum(0.9))
+nn = FF_Neural_Network(17, [Dense_layer(17, 4, Tanh), Dense_layer(4,  1, Tanh)], Learning_rate(0.005), None, None, None, None)
 
-nn.train(x_train, y_train, 300, True, None, None, 'Batch')
-#nn.train(x_train, y_train, 300, True, x_val, y_val, 'Minibatch', 6)
+nn.train(x_train, y_train, 300, True, x_val, y_val)
+nn.reset()
+nn.train(x, y, 300, True)
 
 y_test = np.array([])
 for i in range(len(x_test)):

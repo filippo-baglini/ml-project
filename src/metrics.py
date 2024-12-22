@@ -37,17 +37,7 @@ def compute_accuracy(y_true, y_pred, activation_function="Logistic", threshold=0
     
     elif activation_function == "Tanh":
         # Threshold predictions at 0 for binary classification
-        predicted_labels = (y_pred > 0).astype(int)  # Map Tanh to {0, 1}
-
-        # if y_pred.ndim > 1:
-        #     y_pred = np.argmax(y_pred, axis=1)
-    
-        # if y_true.ndim > 1:
-        #     y_true = np.argmax(y_true, axis=1)
-        
-        # Convert y_true to {0, 1} if labels are {-1, 1}
-        if np.any((y_true != 0) & (y_true != 1)):
-            y_true = (y_true > 0).astype(int)
+         predicted_labels = np.where(y_pred >= 0, 1, -1)
     
     elif activation_function == "Softmax":
         # For multi-class classification, take the argmax
@@ -74,9 +64,10 @@ def squared_loss(y_true, y_pred):
 def mean_squared_error(y_true, y_pred, weights = None, regularization = None, lambda_par = None):
     
     # Compute the mean squared error
+    if (y_true.ndim == 1):
+        y_pred = np.squeeze(y_pred)
+    
     mse = np.mean(squared_loss(y_true, y_pred))
-    penalty = lambda_par * sum(w.ravel().dot(w.ravel()) for w in weights) if weights else 0.0
-
 
     # Add regularization penalty
     penalty = 0.0

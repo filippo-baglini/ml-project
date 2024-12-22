@@ -27,9 +27,9 @@ x = feature_one_hot_encoding(x, [3,3,2,3,4,2])
 x_test = feature_one_hot_encoding(x_test, [3,3,2,3,4,2])
 
 shuffle_data(x, y) #just to shuffle them and prevent some ordering bias
-x, y = k_fold_splitter(x, y, 4) #should split x, y in folds
+x_split, y_split = k_fold_splitter(x, y, 5) #should split x, y in folds
 
-nn = grid_search_k_fold(x, y)
+nn = grid_search_k_fold(x_split, y_split)
 nn.reset()
 
 nn.train(x, y, 300, plot = True)
