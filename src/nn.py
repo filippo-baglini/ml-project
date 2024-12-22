@@ -58,16 +58,12 @@ class FF_Neural_Network:
             if (prev_layer == None): # Output layer
                 #Nesterov momentum
                 if (isinstance(self.momentum, Nesterov_momentum) and self.past_grad.size != 0):
-                    #print("ENTRATO IF")
                     past_grad = self.past_grad[0]
                     self.past_grad = np.delete(self.past_grad, 0)
                     weights = layer.weights + self.momentum() * past_grad
                     delta = (pred - output) * layer.activation.derivative(np.dot(layer.input, weights)).squeeze()
                 else:
-                    #print("ENTRATO ELSE")
                     delta = (pred - output) * layer.activation.derivative(layer.net).squeeze()
-                    # print(f"DELTA = {delta}")
-                    # print(delta.shape)
                
             else: #Hidden layer
                 if layer.input.ndim == 1:
@@ -76,13 +72,11 @@ class FF_Neural_Network:
                     delta_prev_layer = delta_prev_layer.reshape(delta_prev_layer.shape[0], 1)
                 #Nesterov momentum
                 if (isinstance(self.momentum, Nesterov_momentum) and self.past_grad.size != 0):
-                    print("ENTRATO IF")
                     past_grad = self.past_grad[0]
                     self.past_grad = np.delete(self.past_grad, 0)
                     weights = layer.weights + self.momentum() * past_grad
                     delta = np.dot(delta_prev_layer, weights.T) * layer.activation.derivative(np.dot(layer.input, weights))
                 else:
-                    #print("ENTRATO ELSE")
                     delta = np.dot(delta_prev_layer, prev_layer.weights.T) * layer.activation.derivative(layer.net)
 
             #Regularization
@@ -100,10 +94,10 @@ class FF_Neural_Network:
                 grad += regularization
             else:
                 grad = self.learning_rate() * np.dot(layer.input.T, delta)
-                #print(f"GRAD: {grad}")
                 if (grad.ndim == 1):
                     grad = grad.reshape(grad.shape[0], 1)
-                #print(grad.shape)
+
+            grad = np.clip(grad, -0.5, 0.5)
 
             bias_update = self.learning_rate() * np.sum(delta, axis=0, keepdims=True)
 
@@ -154,12 +148,8 @@ class FF_Neural_Network:
                     raise RuntimeError("If you want to train using minibatch you need to specify the number of batches.")
 
                 # Shuffle input and output together to prevent sample ordering bias
-                #shuffle_data(input, output)
-                indices = np.arange(len(input))
-                np.random.shuffle(indices)
-
-                input = input[indices]
-                output = output[indices]
+                shuffle_data(input, output)
+                
                 input_batches = np.array_split(input, mb_number)
                 output_batches = np.array_split(output, mb_number)
                 
@@ -170,12 +160,7 @@ class FF_Neural_Network:
             
             elif (mode == "Online"):
                 #Shuffle input and output together to prevent sample ordering bias
-                #shuffle_data(input, output)
-                indices = np.arange(len(input))
-                np.random.shuffle(indices)
-
-                input = input[indices]
-                output = output[indices]
+                shuffle_data(input, output)
             
                 for i in range(len(input)):
                     pred = self.fwd_computation(input[i])

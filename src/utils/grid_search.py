@@ -54,7 +54,6 @@ def grid_search_hold_out(train_data_in: np.ndarray, train_data_out: np.ndarray, 
                                 for trial in range(4):
                                     eval_losses, eval_accuracies = nn.train(train_data_in, train_data_out, epochs, False, eval_data_in, eval_data_out, 'Minibatch', 6)
                                     eval_loss_values = np.append(eval_loss_values, eval_losses[-1])
-                                    #print(eval_losses[-1])
                                     nn.reset()
                                 mean_loss = np.mean(eval_loss_values)
                                 mean_variance = np.var(eval_loss_values)
@@ -88,20 +87,21 @@ def grid_search_k_fold(input_data: np.ndarray, output_data:np.ndarray):
     best_eval_accuracies = np.array([])
     best_nn = None
     input_size = input_data[0].shape[1]  # Number of input features
-    output_size = output_data[0].shape[1]  # Number of output features
+    output_size = output_data[0].shape[1] if output_data[0].ndim != 1 else 1  # Number of output features
 
     # Options for each layer
     num_units = [2, 4, 6]  # Possible number of units for hidden layers
     num_layers = [1, 2]
-    act_funs = [Logistic, Tanh, ReLU]  # Hidden layer activation functions
-    learning_rates = [Learning_rate(0.1), Learning_rate(0.01), Linear_decay_learning_rate(0.1, 0.01, 100)]
-    regularization = [None, "Tikhonov", "Lasso"]
+    act_funs = [Logistic, Tanh]  # Hidden layer activation functions
+    learning_rates = [Learning_rate(0.01), Linear_decay_learning_rate(0.1, 0.01, 100)]
+    regularization = [None, "Tikhonov"]
     lambda_values = [None, 0.0001, 0.001]
     momentum_values = [None, Momentum(0.9), Nesterov_momentum(0.9)]
     early_stopping = [None, Early_stopping(20, 0.0001)]
     num_epochs = [300]
 
     layer_configs = all_layer_configs(num_units, num_layers, act_funs, input_size, output_size)
+    print(len(layer_configs))
 
     start_time = time.time()
     counter = 0
@@ -116,20 +116,47 @@ def grid_search_k_fold(input_data: np.ndarray, output_data:np.ndarray):
                     for stopping in early_stopping:
                         for epochs in num_epochs:
                             for config in layer_configs:
-                                eval_loss_values = np.array([]) #Mean of the losses over all folds
-                                fold_loss_value = np.array([]) #Mean of the loss over a fold
-                                eval_losses = np.array([]) #Losses over same trials over the same fold
-                                eval_accuracies = np.array([])
+                                eval_loss_values = np.array([]) #Eval losses over all folds
 
                                 nn = FF_Neural_Network(input_size, config, learning_rate, reg, lambda_par, momentum, stopping)
                                 for i, fold in enumerate(input_data):
+                                    fold_loss_values = np.array([]) #losses on different trials over a fold
+                                    eval_losses = np.array([]) #Losses over same trials over the same fold
+                                    eval_accuracies = np.array([])
                                     train_data_in = np.concatenate([input_data[j] for j in range(len(input_data)) if j != i])
-                                    trainn_data_out = np.concatenate([output_data[j] for j in range(len(input_data)) if j != i])
-                                    eval_data = fold
+                                    train_data_out = np.concatenate([output_data[j] for j in range(len(input_data)) if j != i])
+                                    eval_data_in = fold
+                                    eval_data_out = output_data[i]
                                     for trial in range(3):
-                                        eval_losses, eval_accuracies = nn.train(train_data, train_data_out, epochs, False, eval_data_in, eval_data_out, 'Batch')
-                                        eval_loss_values = np.append(eval_loss_values, eval_losses[-1])
+                                        eval_losses, eval_accuracies = nn.train(train_data_in, train_data_out, epochs, False, eval_data_in, eval_data_out, 'Batch')
+                                        fold_loss_values = np.append(eval_loss_values, eval_losses[-1])
                                         nn.reset()
+                                    mean_fold_loss = np.mean(fold_loss_values)
+                                    eval_loss_values = np.append(eval_loss_values, mean_fold_loss)
+                                
+                                mean_loss = np.mean(eval_loss_values)
+                                mean_variance = np.var(eval_loss_values)
+                                if mean_loss < best_eval_loss:
+                                    best_eval_loss = mean_loss
+                                    best_eval_variance = mean_variance
+                                    best_eval_losses = eval_losses
+                                    best_eval_accuracies = eval_accuracies
+                                    best_nn = nn
+                                counter += 1
+                                if (counter % 100 == 0):
+                                    print(f"CONFIGURATION #{counter} TRAINED")
+
+    print(f"Best eval loss: {best_eval_loss}")
+    print(f"Eval variance: {best_eval_variance}")
+    print(f"Eval accuracy: {best_eval_accuracies[-1]}")
+    print(f"Obtained using model: {best_nn}")
+
+    end_time = time.time()
+    print(f"Elapsed time: {end_time - start_time}")
+
+    provaplot(best_eval_losses, best_eval_accuracies, len(best_eval_losses))
+
+    return best_nn
 
 
 

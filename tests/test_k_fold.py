@@ -28,5 +28,16 @@ x_test = feature_one_hot_encoding(x_test, [3,3,2,3,4,2])
 
 shuffle_data(x, y) #just to shuffle them and prevent some ordering bias
 x, y = k_fold_splitter(x, y, 4) #should split x, y in folds
-print(x)
-print(y)
+
+nn = grid_search_k_fold(x, y)
+nn.reset()
+
+nn.train(x, y, 300, plot = True)
+
+y_test = np.array([])
+for i in range(len(x_test)):
+    y_test = np.append(y_test, nn.fwd_computation(x_test[i]))
+accuracy = compute_accuracy(y_true, y_test, type(nn.layers[-1].activation).__name__)
+prova_loss = mean_squared_error(y_true, y_test)
+print(f"Test accuracy: {accuracy}")
+print(f"Test loss: {prova_loss}")
