@@ -10,25 +10,40 @@ from src.early_stopping import *
 import time
 from itertools import product
 
-def grid_search_hold_out(train_data_in: np.ndarray, train_data_out: np.ndarray, eval_data_in: np.ndarray, eval_data_out: np.ndarray):
+def grid_search_hold_out(
+        train_data_in: np.ndarray,
+        train_data_out: np.ndarray,
+        eval_data_in: np.ndarray,
+        eval_data_out: np.ndarray,
+        units: List[int],
+        layers: List[int],
+        activations: List[ActivationFunction],
+        l_rates: List[Learning_rate],
+        regularizers: List[str],
+        lambdas: List[float],
+        momentums: List[Momentum],
+        stoppings: List[Early_stopping],
+        epochs: List[int]
+        ):
+    
     best_eval_loss = float('inf')
-    best_eval_variance = float('inf')
+    best_eval_standard_deviation = float('inf')
     best_eval_losses = np.array([])
     best_eval_accuracies = np.array([])
     best_nn = None
     input_size = train_data_in.shape[1]  # Number of input features
     output_size = train_data_out.shape[1] if train_data_out.ndim != 1 else 1  # Number of output features
 
-# Options for each layer
-    num_units = [2, 4]  # Possible number of units for hidden layers
-    num_layers = [1, 2]
-    act_funs = [Logistic, Tanh]  # Hidden layer activation functions
-    learning_rates = [Learning_rate(0.05), Learning_rate(0.02)]
-    regularization = [None, "Tikhonov"]
-    lambda_values = [None, 0.0001, 0.001]
-    momentum_values = [None, Momentum(0.9)]
-    early_stopping = [Early_stopping(50, 0.0001), Early_stopping(20, 0.0001)]
-    num_epochs = [300]
+    # Options for each layer
+    num_units = units  # Possible number of units for hidden layers
+    num_layers = layers
+    act_funs = activations  # Hidden layer activation functions
+    learning_rates = l_rates
+    regularization = regularizers
+    lambda_values = lambdas
+    momentum_values = momentums
+    early_stopping = stoppings
+    num_epochs = epochs
 
     layer_configs = all_layer_configs(num_units, num_layers, act_funs, input_size, output_size)
     print(len(layer_configs))
@@ -51,17 +66,18 @@ def grid_search_hold_out(train_data_in: np.ndarray, train_data_out: np.ndarray, 
                                 eval_accuracies = np.array([])
 
                                 nn = FF_Neural_Network(input_size, config, learning_rate, reg, lambda_par, momentum, stopping)
-                                for trial in range(4):
+                                for trial in range(5):
                                     eval_losses, eval_accuracies = nn.train(train_data_in, train_data_out, epochs, False, eval_data_in, eval_data_out)
                                     eval_loss_values = np.append(eval_loss_values, eval_losses[-1])
+                                    #print(eval_losses[-1])
                                     nn.reset()
                                 mean_loss = np.mean(eval_loss_values)
                                 print(f"MEAN LOSS: {mean_loss}")
-                                mean_variance = np.var(eval_loss_values)
+                                mean_standard_deviation = np.std(eval_loss_values)
                                 if mean_loss < best_eval_loss:
                                     print(f"UPDATED BEST LOSS: {mean_loss}")
                                     best_eval_loss = mean_loss
-                                    best_eval_variance = mean_variance
+                                    best_eval_standard_deviation = mean_standard_deviation
                                     best_eval_losses = eval_losses
                                     best_eval_accuracies = eval_accuracies
                                     best_nn = nn
@@ -71,7 +87,7 @@ def grid_search_hold_out(train_data_in: np.ndarray, train_data_out: np.ndarray, 
 
 
     print(f"Best eval loss: {best_eval_loss}")
-    print(f"Eval variance: {best_eval_variance}")
+    print(f"Eval standard deviation: {best_eval_standard_deviation}")
     print(f"Eval accuracy: {best_eval_accuracies[-1]}")
     print(f"Obtained using model: {best_nn}")
 
@@ -80,11 +96,23 @@ def grid_search_hold_out(train_data_in: np.ndarray, train_data_out: np.ndarray, 
 
     provaplot(best_eval_losses, best_eval_accuracies, len(best_eval_losses))
 
-    return best_nn
+    return best_nn, best_eval_loss
 
-def grid_search_k_fold(input_data: np.ndarray, output_data:np.ndarray):
+def grid_search_k_fold(
+        input_data: np.ndarray,
+        output_data: np.ndarray,
+        units: List[int],
+        layers: List[int],
+        activations: List[ActivationFunction],
+        l_rates: List[Learning_rate],
+        regularizers: List[str],
+        lambdas: List[float],
+        momentums: List[Momentum],
+        stoppings: List[Early_stopping],
+        epochs: List[int]
+        ):
     best_eval_loss = float('inf')
-    best_eval_variance = float('inf')
+    best_eval_standard_deviation = float('inf')
     best_eval_losses = np.array([])
     best_eval_accuracies = np.array([])
     best_nn = None
@@ -92,15 +120,15 @@ def grid_search_k_fold(input_data: np.ndarray, output_data:np.ndarray):
     output_size = output_data[0].shape[1] if output_data[0].ndim != 1 else 1  # Number of output features
 
     # Options for each layer
-    num_units = [2, 4]  # Possible number of units for hidden layers
-    num_layers = [1, 2]
-    act_funs = [Logistic, Tanh]  # Hidden layer activation functions
-    learning_rates = [Learning_rate(0.05), Learning_rate(0.02)]
-    regularization = [None, "Tikhonov"]
-    lambda_values = [None, 0.0001, 0.001]
-    momentum_values = [None, Momentum(0.9)]
-    early_stopping = [None, Early_stopping(20, 0.0001)]
-    num_epochs = [300]
+    num_units = units  # Possible number of units for hidden layers
+    num_layers = layers
+    act_funs = activations  # Hidden layer activation functions
+    learning_rates = l_rates
+    regularization = regularizers
+    lambda_values = lambdas
+    momentum_values = momentums
+    early_stopping = stoppings
+    num_epochs = epochs
 
     layer_configs = all_layer_configs(num_units, num_layers, act_funs, input_size, output_size)
     print(len(layer_configs))
@@ -120,9 +148,8 @@ def grid_search_k_fold(input_data: np.ndarray, output_data:np.ndarray):
                             for config in layer_configs:
                                 eval_loss_values = np.array([]) #Eval losses over all folds
 
-                                #nn = FF_Neural_Network(input_size, config, learning_rate, reg, lambda_par, momentum, stopping)
+                                nn = FF_Neural_Network(input_size, config, learning_rate, reg, lambda_par, momentum, stopping)
                                 for i, fold in enumerate(input_data):
-                                    nn = FF_Neural_Network(input_size, config, learning_rate, reg, lambda_par, momentum, stopping)
                                     fold_loss_values = np.array([]) #losses on different trials over a fold
                                     eval_losses = np.array([]) #Losses over same trials over the same fold
                                     eval_accuracies = np.array([])
@@ -132,7 +159,6 @@ def grid_search_k_fold(input_data: np.ndarray, output_data:np.ndarray):
                                     eval_data_out = output_data[i]
                                     for trial in range(3):
                                         eval_losses, eval_accuracies = nn.train(train_data_in, train_data_out, epochs, False, eval_data_in, eval_data_out, 'Batch')
-                                        print(eval_losses[-1])
                                         fold_loss_values = np.append(fold_loss_values, eval_losses[-1])
                                         nn.reset()
                                     mean_fold_loss = np.mean(fold_loss_values)
@@ -140,11 +166,11 @@ def grid_search_k_fold(input_data: np.ndarray, output_data:np.ndarray):
                                 
                                 mean_loss = np.mean(eval_loss_values)
                                 print(f"MEAN LOSS: {mean_loss}")
-                                mean_variance = np.var(eval_loss_values)
+                                mean_standard_deviation = np.std(eval_loss_values)
                                 if mean_loss < best_eval_loss:
                                     print(f"UPDATED BEST LOSS: {mean_loss}")
                                     best_eval_loss = mean_loss
-                                    best_eval_variance = mean_variance
+                                    best_eval_standard_deviation = mean_standard_deviation
                                     best_eval_losses = eval_losses
                                     best_eval_accuracies = eval_accuracies
                                     best_nn = nn
@@ -153,7 +179,7 @@ def grid_search_k_fold(input_data: np.ndarray, output_data:np.ndarray):
                                     print(f"CONFIGURATION #{counter} TRAINED")
 
     print(f"Best eval loss: {best_eval_loss}")
-    print(f"Eval variance: {best_eval_variance}")
+    print(f"Eval standard diviation: {best_eval_standard_deviation}")
     print(f"Eval accuracy: {best_eval_accuracies[-1]}")
     print(f"Obtained using model: {best_nn}")
 
@@ -162,12 +188,7 @@ def grid_search_k_fold(input_data: np.ndarray, output_data:np.ndarray):
 
     provaplot(best_eval_losses, best_eval_accuracies, len(best_eval_losses))
 
-    return best_nn
-
-
-
-
-
+    return best_nn, best_eval_loss
 
 def all_layer_configs(num_units: List[int], num_layers: List[int], act_funs: list[ActivationFunction], input_size: int, output_size: int):
     unit_act_configs = list()

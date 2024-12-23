@@ -1,5 +1,3 @@
-import numpy as np
-
 class Early_stopping:
 
     def __init__(self, patience: int, minimum_decrease: float):

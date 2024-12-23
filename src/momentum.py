@@ -1,5 +1,3 @@
-import numpy as np
-
 class Momentum:
 
     def __init__(self, value):

@@ -4,9 +4,10 @@ from .layers import *
 from .learning_rate import *
 from .momentum import *
 from .early_stopping import *
-from .metrics import *
+from .utils.metrics import *
 from .utils.plot import *
 from .utils.data_split import shuffle_data
+import time
 from typing import List
 from typing import Optional, Literal, List
 
@@ -78,7 +79,7 @@ class FF_Neural_Network:
                     delta = np.dot(delta_prev_layer, weights.T) * layer.activation.derivative(np.dot(layer.input, weights))
                 else:
                     delta = np.dot(delta_prev_layer, prev_layer.weights.T) * layer.activation.derivative(layer.net)
-
+                   
             #Regularization
             if (self.regularized == "Tikhonov"):
                 regularization = 2 * self.lambda_par * layer.weights
@@ -135,6 +136,11 @@ class FF_Neural_Network:
         eval_accuracies = []
         early_stopping_epoch = epochs - 1
 
+        record_accuracy = True
+
+        if (isinstance(self.layers[-1].activation, Linear)):
+            record_accuracy = False
+
         for epoch in range(epochs):
 
             if (output.ndim != 1): 
@@ -152,7 +158,7 @@ class FF_Neural_Network:
                     raise RuntimeError("If you want to train using minibatch you need to specify the number of batches.")
 
                 # Shuffle input and output together to prevent sample ordering bias
-                shuffle_data(input, output)
+                input, output = shuffle_data(input, output)
                 
                 input_batches = np.array_split(input, mb_number)
                 output_batches = np.array_split(output, mb_number)
@@ -164,61 +170,90 @@ class FF_Neural_Network:
             
             elif (mode == "Online"):
                 #Shuffle input and output together to prevent sample ordering bias
-                shuffle_data(input, output)
+                input, output = shuffle_data(input, output)
             
                 for i in range(len(input)):
                     pred = self.fwd_computation(input[i])
-                    predictions = np.vstack([predictions, pred])
+                    predictions = np.append(predictions, pred)
                     self.bwd_computation(np.array([output[i]]), pred)
             
             else:
                 raise RuntimeError(f"{mode} is not a training mode.")
 
-            train_acc = compute_accuracy(output, predictions.reshape(predictions.shape[0]), type(self.layers[-1].activation).__name__)
-            if self.regularized:
-                weights = weights = [layer.weights for layer in self.layers]
-                train_loss = mean_squared_error(output, predictions, weights, self.regularized, self.lambda_par)
-            else:
-                train_loss =  mean_squared_error(output, predictions)
+            if (record_accuracy):
+                train_acc = compute_accuracy(output, predictions.reshape(predictions.shape[0]), type(self.layers[-1].activation).__name__)
+                train_accuracies.append(train_acc)
+
+            train_loss = mean_squared_error(output, predictions)
             train_losses.append(train_loss)
-            train_accuracies.append(train_acc)
 
             #Evaluation and early stopping
             if (eval_input is not None and eval_output is not None):
-                eval_loss = 0
-                eval_acc = compute_accuracy(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]), type(self.layers[-1].activation).__name__)
-                if (self.regularized):
-                    weights = weights = [layer.weights for layer in self.layers]
-                    eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input), weights, self.regularized, self.lambda_par)
-                else:
-                    eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input))
-                if (self.early_stopping is not None):
-                    if (self.early_stopping(eval_losses, eval_loss)):
-                        #print(f"Early stopping activated, halting training at epoch {epoch}.")
-                        early_stopping_epoch = epoch
-                        eval_losses.append(eval_loss)
-                        eval_accuracies.append(eval_acc)
-                        break
-                eval_losses.append(eval_loss)
-                eval_accuracies.append(eval_acc)
+                if (self.evaluate(eval_input, eval_output, eval_losses, eval_accuracies, record_accuracy)):
+                    early_stopping_epoch = epoch
+                    break
             
             # if (epoch % 100 == 0 or epoch == epochs - 1):
             #     print(f"Training Accuracy at epoch {epoch + 1} = {train_acc:.4f}")
             #     print(f"Training Loss at epoch: {epoch + 1} = {train_loss:.4f}")
             #     if (eval_input is not None and eval_output is not None):
-            #         print(f"Validation Accuracy at epoch {epoch + 1} = {eval_acc:.4f}")
-            #         print(f"Validation Loss at epoch: {epoch + 1} = {eval_loss:.4f}")
-        
+            #         print(f"Validation Accuracy at epoch {epoch + 1} = {eval_accuracies[-1]:.4f}")
+            #         print(f"Validation Loss at epoch: {epoch + 1} = {eval_losses[-1]:.4f}")
+
         if (plot):
-            provaplot(train_losses, train_losses, early_stopping_epoch + 1)
-            if (eval_input is not None and eval_output is not None):
-                provaplot(eval_losses, eval_losses, early_stopping_epoch + 1)
+            if (record_accuracy):
+                provaplot(train_losses, train_accuracies, early_stopping_epoch + 1)
+                if (eval_input is not None and eval_output is not None):
+                    provaplot(eval_losses, eval_accuracies, early_stopping_epoch + 1)
+            else:
+                plot_loss(train_losses, early_stopping_epoch + 1)
+                if (eval_input is not None and eval_output is not None):
+                    plot_loss(eval_losses, early_stopping_epoch + 1)
 
         if (eval_input is not None and eval_output is not None):
             return eval_losses, eval_accuracies
         return 
     
-    def reset (self):
+    def evaluate(self, eval_input: np.ndarray, eval_output: np.ndarray, eval_losses: np.ndarray, eval_accuracies: np.ndarray, record_accuracy: bool):
+        eval_loss = 0
+        if (record_accuracy):
+            eval_acc = compute_accuracy(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]), type(self.layers[-1].activation).__name__)
+            eval_accuracies.append(eval_acc)
+        eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input))
+        if (self.early_stopping is not None):
+            if (self.early_stopping(eval_losses, eval_loss)):
+                #print(f"Early stopping activated, halting training at epoch {epoch}.")
+                eval_losses.append(eval_loss)
+                return True
+        eval_losses.append(eval_loss)
+        return False
+
+    def test(self, input: np.ndarray, output: np.ndarray):
+
+        record_accuracy = True
+        if (isinstance(self.layers[-1].activation, Linear)):
+            record_accuracy = False
+
+        y_test = self.fwd_computation(input)
+
+        if (record_accuracy):
+            accuracy = compute_accuracy(output, y_test.reshape(y_test.shape[0]), type(self.layers[-1].activation).__name__)
+        prova_loss = mean_squared_error(output, y_test)
+        
+        if (record_accuracy):
+            print(f"Test accuracy: {accuracy}")
+        print(f"Test loss: {prova_loss}")
+
+    def retrain(self, train_data_in: np.ndarray, train_data_out: np.ndarray, best_eval_loss: float, epochs: int):
+        #CAMBIARE
+        for epoch in range(epochs):
+            self.train(train_data_in, train_data_out, 1)
+            train_loss = mean_squared_error(train_data_out, self.fwd_computation(train_data_in))
+            print(train_loss)
+            if (train_loss < best_eval_loss):
+                break
+
+    def reset(self):
         """Method to allow resetting the weights to retrain a model"""
 
         for layer in self.layers:

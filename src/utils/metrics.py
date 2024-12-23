@@ -1,30 +1,8 @@
 import numpy as np
 
-def binary_accuracy(y_true, y_pred):
-
-    if y_true.shape != y_pred.shape:
-        raise ValueError("Shapes of y_true and y_pred must match.")
-    
-    y_pred = np.round(y_pred).astype(int)
-    #print(f"y_true = {y_true}, y_pred = {y_pred}")
-    
-    correct_predictions = np.sum(y_true == y_pred)
-    return correct_predictions / len(y_true)
-
 def compute_accuracy(y_true, y_pred, activation_function="Logistic", threshold=0.5):
-    """
-    Compute accuracy for a neural network with an arbitrary activation function in the output layer.
+    """Compute accuracy for a neural network with an arbitrary activation function in the output layer."""
 
-    Parameters:
-        y_true: Ground truth labels (array-like).
-        y_pred: Predicted values from the output layer (array-like).
-        activation_function: The activation function used in the output layer 
-                             ("sigmoid", "tanh", "softmax", "linear").
-        threshold: Threshold for binary classification (default is 0.5, used for sigmoid and tanh).
-
-    Returns:
-        Accuracy as a float (correct_predictions / total_samples).
-    """
     if y_true.shape != y_pred.shape:
         raise ValueError("Shapes of y_true and y_pred must match.")
     
@@ -63,21 +41,9 @@ def squared_loss(y_true, y_pred):
 
 def mean_squared_error(y_true, y_pred, weights = None, regularization = None, lambda_par = None):
     
-    # Compute the mean squared error
     if (y_true.ndim == 1):
         y_pred = np.squeeze(y_pred)
     
     mse = np.mean(squared_loss(y_true, y_pred))
-
-    # Add regularization penalty
-    penalty = 0.0
-    if (weights is not None and regularization is not None):
-        
-        if (regularization == "Tikhonov"):
-            penalty = lambda_par * np.sum([np.sum(w ** 2) for w in weights])
-        elif (regularization == "Lasso"):
-            penalty = lambda_par * np.sum([np.sum(np.abs(w)) for w in weights])
-        else:
-            raise RuntimeError(f"Unsupported regularization type: {regularization}")
     
-    return mse + penalty
+    return mse 

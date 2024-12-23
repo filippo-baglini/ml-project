@@ -59,3 +59,19 @@ def provaplot(losses, accuracies, epochs):
     plt.show()
     plt.close()  # Close the plot to avoid memory issues
 
+def plot_loss(losses, epochs):
+    """
+    Plot the loss curve.
+
+    Parameters:
+    - losses: List or array of loss values for each epoch.
+    - epochs: Number of epochs.
+    """
+    plt.figure(figsize=(8, 5))
+    plt.plot(range(1, epochs + 1), losses, label='Loss', color='blue')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss Curve')
+    plt.legend()
+    plt.show()
+    plt.close()  # Close the plot to avoid memory issues
