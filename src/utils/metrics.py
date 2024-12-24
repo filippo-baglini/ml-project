@@ -39,7 +39,7 @@ def squared_loss(y_true, y_pred):
         raise ValueError("Shapes of y_true and y_pred must match.")
     return (y_true - y_pred) ** 2
 
-def mean_squared_error(y_true, y_pred, weights = None, regularization = None, lambda_par = None):
+def mean_squared_error(y_true, y_pred):
     
     if (y_true.ndim == 1):
         y_pred = np.squeeze(y_pred)
@@ -47,3 +47,9 @@ def mean_squared_error(y_true, y_pred, weights = None, regularization = None, la
     mse = np.mean(squared_loss(y_true, y_pred))
     
     return mse 
+
+def mean_euclidean_error(y_true, y_pred):
+   
+    if (y_true.ndim == 1):
+        y_pred = np.squeeze(y_pred)
+    return np.mean(np.sqrt(np.sum((y_true - y_pred) ** 2, axis=1)))

@@ -33,17 +33,17 @@ x_test = feature_one_hot_encoding(x_test, [3,3,2,3,4,2])
 
 x_split, y_split = k_fold_splitter(x, y, 4) #should split x, y in folds
 
-num_units = [2, 4]  # Possible number of units for hidden layers
-num_layers = [1, 2]
-act_funs = [Logistic, Tanh]  # Hidden layer activation functions
-learning_rates = [Learning_rate(0.05), Learning_rate(0.03)]
-regularization = [None, "Tikhonov"]
-lambda_values = [None, 0.0001, 0.001]
-momentum_values = [None, Momentum(0.9)]
-early_stopping = [Early_stopping(50, 0.0001), Early_stopping(20, 0.0001)]
+num_units = [2, 3, 4, 6, 8, 10]  # Possible number of units for hidden layers
+num_layers = [1]
+act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU]  # Hidden layer activation functions
+learning_rates = [Learning_rate(0.004), Linear_decay_learning_rate(0.004, 0.002, 100), Learning_rate(0.05), Learning_rate(0.03), Linear_decay_learning_rate(0.05, 0.02, 100)]
+regularization = [None, "Tikhonov", "Lasso"]
+lambda_values = [None, 0.0001, 0.001, 0.01]
+momentum_values = [None, Momentum(0.9), Nesterov_momentum(0.9)]
+early_stopping = [Early_stopping(5, 0.0001), Early_stopping(7, 0.0001)]
 num_epochs = [300]
 
-nn = grid_search_k_fold(x_split, y_split, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs)
+nn, best_eval_loss = grid_search_k_fold(x_split, y_split, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs)
 nn.reset()
 
 nn.train(x, y, 300, True)

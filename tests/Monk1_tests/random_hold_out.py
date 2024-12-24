@@ -33,19 +33,19 @@ x_test = feature_one_hot_encoding(x_test, [3,3,2,3,4,2])
 
 x_train, x_eval, y_train, y_eval = train_val_splitter(x, y, 0.25)
 
-num_units = [2, 4, 6]  # Possible number of units for hidden layers
-num_layers = [1]
+num_units = (2, 8)  # Possible number of units for hidden layers
+num_layers = (1, 1)
 act_funs = [Logistic, Tanh, ReLU]  # Hidden layer activation functions
-learning_rates = [Learning_rate(0.004), Learning_rate(0.005), Learning_rate(0.05), Learning_rate(0.03)]
+learning_rates = (0.002, 0.05)
 regularization = [None, "Tikhonov"]
-lambda_values = [None, 0.0001, 0.001, 0.01]
-momentum_values = [None, Momentum(0.9)]
-early_stopping = [Early_stopping(5, 0.0001), Early_stopping(12, 0.0001)]
+lambda_values = (0.0001, 0.01)
+momentum_values = (0.1, 0.9)
+early_stopping = [Early_stopping(5, 0.0001), Early_stopping(8, 0.0001)]
 num_epochs = [300]
 
-nn, best_eval_loss = grid_search_hold_out(x_train, y_train, x_eval, y_eval, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs)
+nn, best_eval_loss = random_search_hold_out(x_train, y_train, x_eval, y_eval, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs, 1000)
 nn.reset()
 
-nn.train(x, y, 300, plot = True)
+nn.train(x, y, 300, True)
 
 nn.test(x_test, y_true)

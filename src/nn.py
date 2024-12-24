@@ -130,6 +130,12 @@ class FF_Neural_Network:
             mb_number = None
             ):
         
+        #Adjust the outputs to -1, 1 for Tanh
+        if (isinstance(self.layers[-1].activation, Tanh)):
+            output = 2 * output - 1
+            if (eval_output is not None):
+                eval_output = 2 * eval_output - 1
+        
         train_losses = []
         train_accuracies = []
         eval_losses = []
@@ -138,6 +144,7 @@ class FF_Neural_Network:
 
         record_accuracy = True
 
+        #We do not record accuracy if we are performing a regression task
         if (isinstance(self.layers[-1].activation, Linear)):
             record_accuracy = False
 
@@ -184,7 +191,10 @@ class FF_Neural_Network:
                 train_acc = compute_accuracy(output, predictions.reshape(predictions.shape[0]), type(self.layers[-1].activation).__name__)
                 train_accuracies.append(train_acc)
 
-            train_loss = mean_squared_error(output, predictions)
+            if (isinstance(self.layers[-1].activation, Linear)):
+                train_loss = mean_euclidean_error(output, predictions) #For the cup we use MEE loss
+            else:
+                train_loss = mean_squared_error(output, predictions) #For the monk we use MSE loss
             train_losses.append(train_loss)
 
             #Evaluation and early stopping
@@ -215,11 +225,15 @@ class FF_Neural_Network:
         return 
     
     def evaluate(self, eval_input: np.ndarray, eval_output: np.ndarray, eval_losses: np.ndarray, eval_accuracies: np.ndarray, record_accuracy: bool):
+
         eval_loss = 0
         if (record_accuracy):
             eval_acc = compute_accuracy(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]), type(self.layers[-1].activation).__name__)
             eval_accuracies.append(eval_acc)
-        eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input))
+        if (isinstance(self.layers[-1].activation, Linear)):
+            eval_loss = mean_euclidean_error(eval_output, self.fwd_computation(eval_input)) #For the cup we use MEE loss
+        else:
+            eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input)) #For the monk we use MSE loss
         if (self.early_stopping is not None):
             if (self.early_stopping(eval_losses, eval_loss)):
                 #print(f"Early stopping activated, halting training at epoch {epoch}.")
@@ -230,6 +244,11 @@ class FF_Neural_Network:
 
     def test(self, input: np.ndarray, output: np.ndarray):
 
+        #Adjust the outputs to -1, 1 for Tanh
+        if (isinstance(self.layers[-1].activation, Tanh)):
+            output = 2 * output - 1
+
+        #We do not record accuracy if we are performing a regression task
         record_accuracy = True
         if (isinstance(self.layers[-1].activation, Linear)):
             record_accuracy = False
@@ -238,11 +257,15 @@ class FF_Neural_Network:
 
         if (record_accuracy):
             accuracy = compute_accuracy(output, y_test.reshape(y_test.shape[0]), type(self.layers[-1].activation).__name__)
-        prova_loss = mean_squared_error(output, y_test)
+        
+        if (isinstance(self.layers[-1].activation, Linear)):
+            test_loss = mean_euclidean_error(output, y_test) #For the cup we use MEE loss
+        else:
+            test_loss = mean_squared_error(output, y_test) #For the monk we use MSE loss
         
         if (record_accuracy):
             print(f"Test accuracy: {accuracy}")
-        print(f"Test loss: {prova_loss}")
+        print(f"Test loss: {test_loss}")
 
     def retrain(self, train_data_in: np.ndarray, train_data_out: np.ndarray, best_eval_loss: float, epochs: int):
         #CAMBIARE
