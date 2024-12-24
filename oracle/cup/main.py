@@ -1,6 +1,7 @@
 import numpy as np
 import keras
 from keras import layers
+from keras.src.callbacks import EarlyStopping
 from matplotlib import pyplot as plt
 from sklearn.model_selection import KFold
 
@@ -78,7 +79,9 @@ for train_index, val_index in kfold.split(X):
     opt = keras.optimizers.SGD(learning_rate=0.001, momentum=0.8, weight_decay=0.002)
     model.compile(loss='mse', metrics=['mse'], optimizer=opt)
 
-    h = model.fit(X_train, y_train, epochs=100, validation_data=(X_val, y_val), verbose=0)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=19, restore_best_weights=True)
+
+    h = model.fit(X_train, y_train, epochs=300, validation_data=(X_val, y_val), callbacks=[early_stopping])
     train_scores = model.evaluate(X_train, y_train, verbose=0)
     val_scores = model.evaluate(X_val, y_val, verbose=0)
 
