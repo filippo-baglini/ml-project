@@ -43,9 +43,9 @@ momentum_values = [None, Momentum(0.9)]
 early_stopping = [Early_stopping(50, 0.0001), Early_stopping(20, 0.0001)]
 num_epochs = [300]
 
-nn = grid_search_hold_out(x_train, y_train, x_eval, y_eval, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs)
+nn, best_train_loss = grid_search_hold_out(x_train, y_train, x_eval, y_eval, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs)
 nn.reset()
 
-nn.train(x, y, 300, plot = True)
+nn.train(x, y, 300, None, None, best_train_loss)
 
 nn.test(x_test, y_true)

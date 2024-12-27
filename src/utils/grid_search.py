@@ -29,6 +29,7 @@ def grid_search_hold_out(
         ):
     
     best_eval_loss = float('inf')
+    best_train_loss = float('inf')
     best_eval_standard_deviation = float('inf')
     best_eval_losses = np.array([])
     best_eval_accuracies = np.array([])
@@ -53,21 +54,27 @@ def grid_search_hold_out(
                         for epochs in num_epochs:
                             for config in layer_configs:
                                 eval_loss_values = np.array([])
-                                eval_losses = np.array([])
-                                eval_accuracies = np.array([])
+                                train_loss_values = np.array([])
+                                eval_losses = []
+                                eval_accuracies = []
 
                                 nn = FF_Neural_Network(input_size, config, learning_rate, reg, lambda_par, momentum, stopping)
-                                #print(nn)
+
                                 for trial in range(5):
-                                    eval_losses, eval_accuracies = nn.train(train_data_in, train_data_out, epochs, False, eval_data_in, eval_data_out)
-                                    eval_loss_values = np.append(eval_loss_values, eval_losses[-1])
+                                    eval_loss, eval_accuracy, train_loss = nn.train(train_data_in, train_data_out, epochs, False, eval_data_in, eval_data_out)
+                                    eval_losses.append(eval_loss)
+                                    eval_accuracies.append(eval_accuracy)
+                                    eval_loss_values = np.append(eval_loss_values, eval_loss[-1])
+                                    train_loss_values = np.append(train_loss_values, train_loss)
                                     nn.reset()
-                                mean_loss = np.mean(eval_loss_values)
-                                print(f"MEAN LOSS: {mean_loss}")
+                                mean_eval_loss = np.mean(eval_loss_values)
+                                mean_train_loss = np.mean(train_loss_values)
+                                print(f"MEAN LOSS: {mean_eval_loss}")
                                 mean_standard_deviation = np.std(eval_loss_values)
-                                if mean_loss < best_eval_loss:
-                                    print(f"UPDATED BEST LOSS: {mean_loss}")
-                                    best_eval_loss = mean_loss
+                                if mean_eval_loss < best_eval_loss:
+                                    print(f"UPDATED BEST LOSS: {mean_eval_loss}")
+                                    best_eval_loss = mean_eval_loss
+                                    best_train_loss = mean_train_loss
                                     best_eval_standard_deviation = mean_standard_deviation
                                     best_eval_losses = eval_losses
                                     best_eval_accuracies = eval_accuracies
@@ -77,21 +84,25 @@ def grid_search_hold_out(
                                     print(f"CONFIGURATION #{counter} TRAINED")
 
 
-    print(f"Best eval loss: {best_eval_loss}")
+    print(f"Best mean eval loss: {best_eval_loss}")
     print(f"Eval standard deviation: {best_eval_standard_deviation}")
     if (task == "Classification"):
-        print(f"Eval accuracy: {best_eval_accuracies[-1]}")
+        mean_accuracy = 0
+        for run in best_eval_accuracies:
+            mean_accuracy += run[-1]
+        print(f"Mean eval accuracy: {mean_accuracy / len(best_eval_accuracies)}")
+    print(f"Best mean train loss: {best_train_loss}")
     print(f"Obtained using model: {best_nn}")
 
     end_time = time.time()
     print(f"Elapsed time: {end_time - start_time}")
 
     if (task == "Classification"):
-        provaplot(best_eval_losses, best_eval_accuracies, len(best_eval_losses))
+        plot_cross_validation(best_eval_losses, best_eval_accuracies)
     else:
-        plot_loss(best_eval_losses, len(best_eval_losses))
+        plot_loss_cross_validation(best_eval_losses)
 
-    return best_nn, best_eval_loss
+    return best_nn, best_train_loss
 
 def grid_search_k_fold(
         input_data: np.ndarray,
@@ -108,6 +119,7 @@ def grid_search_k_fold(
         task: Optional[Literal["Classification", "Regression"]] = "Classification"
         ):
     best_eval_loss = float('inf')
+    best_train_loss = float('inf')
     best_eval_standard_deviation = float('inf')
     best_eval_losses = np.array([])
     best_eval_accuracies = np.array([])
@@ -132,6 +144,9 @@ def grid_search_k_fold(
                         for epochs in num_epochs:
                             for config in layer_configs:
                                 eval_loss_values = np.array([]) #Eval losses over all folds
+                                all_eval_losses = []
+                                all_eval_accuracies = []
+                                train_loss_values = np.array([])
 
                                 nn = FF_Neural_Network(input_size, config, learning_rate, reg, lambda_par, momentum, stopping)
                                 for i, fold in enumerate(input_data):
@@ -143,41 +158,50 @@ def grid_search_k_fold(
                                     eval_data_in = fold
                                     eval_data_out = output_data[i]
                                     for trial in range(3):
-                                        eval_losses, eval_accuracies = nn.train(train_data_in, train_data_out, epochs, False, eval_data_in, eval_data_out, 'Batch')
+                                        eval_losses, eval_accuracies, train_loss = nn.train(train_data_in, train_data_out, epochs, False, eval_data_in, eval_data_out)
+                                        all_eval_losses.append(eval_losses)
+                                        all_eval_accuracies.append(eval_accuracies)
                                         fold_loss_values = np.append(fold_loss_values, eval_losses[-1])
+                                        train_loss_values = np.append(train_loss_values, train_loss)
                                         nn.reset()
-                                    mean_fold_loss = np.mean(fold_loss_values)
-                                    eval_loss_values = np.append(eval_loss_values, mean_fold_loss)
+                                    mean_fold_eval_loss = np.mean(fold_loss_values)
+                                    eval_loss_values = np.append(eval_loss_values, mean_fold_eval_loss)
                                 
-                                mean_loss = np.mean(eval_loss_values)
-                                print(f"MEAN LOSS: {mean_loss}")
+                                mean_eval_loss = np.mean(eval_loss_values)
+                                print(f"MEAN LOSS: {mean_eval_loss}")
                                 mean_standard_deviation = np.std(eval_loss_values)
-                                if mean_loss < best_eval_loss:
-                                    print(f"UPDATED BEST LOSS: {mean_loss}")
-                                    best_eval_loss = mean_loss
+                                mean_train_loss = np.mean(train_loss_values)
+                                if mean_eval_loss < best_eval_loss:
+                                    print(f"UPDATED BEST LOSS: {mean_eval_loss}")
+                                    best_eval_loss = mean_eval_loss
                                     best_eval_standard_deviation = mean_standard_deviation
-                                    best_eval_losses = eval_losses
-                                    best_eval_accuracies = eval_accuracies
+                                    best_train_loss = mean_train_loss
+                                    best_eval_losses = all_eval_losses
+                                    best_eval_accuracies = all_eval_accuracies
                                     best_nn = nn
                                 counter += 1
                                 if (counter % 100 == 0):
                                     print(f"CONFIGURATION #{counter} TRAINED")
 
-    print(f"Best eval loss: {best_eval_loss}")
+    print(f"Best mean eval loss: {best_eval_loss}")
     print(f"Eval standard deviation: {best_eval_standard_deviation}")
     if (task == "Classification"):
-        print(f"Eval accuracy: {best_eval_accuracies[-1]}")
+        mean_accuracy = 0
+        for run in best_eval_accuracies:
+            mean_accuracy += run[-1]
+        print(f"Mean eval accuracy: {mean_accuracy / len(best_eval_accuracies)}")
+    print(f"Best mean train loss: {best_train_loss}")
     print(f"Obtained using model: {best_nn}")
 
     end_time = time.time()
     print(f"Elapsed time: {end_time - start_time}")
 
     if (task == "Classification"):
-        provaplot(best_eval_losses, best_eval_accuracies, len(best_eval_losses))
+        plot_cross_validation(best_eval_losses, best_eval_accuracies)
     else:
-        plot_loss(best_eval_losses, len(best_eval_losses))
+        plot_loss_cross_validation(best_eval_losses)
 
-    return best_nn, best_eval_loss
+    return best_nn, best_train_loss
 
 
 def random_search_hold_out(
@@ -199,6 +223,7 @@ def random_search_hold_out(
         ):
     best_eval_loss = float('inf')
     best_eval_standard_deviation = float('inf')
+    best_train_loss = float('inf')
     best_eval_losses = np.array([])
     best_eval_accuracies = np.array([])
     best_nn = None
@@ -234,23 +259,28 @@ def random_search_hold_out(
         num_epochs = random.choice(epochs)
 
         eval_loss_values = np.array([])
-        eval_losses = np.array([])
-        eval_accuracies = np.array([])
+        eval_losses = []
+        eval_accuracies = []
 
         nn = FF_Neural_Network(input_size, config, learning_rate, regularization, lambda_par, momentum, early_stopping)
 
-        for tries in range(5):
-            eval_losses, eval_accuracies = nn.train(train_data_in, train_data_out, num_epochs, False, eval_data_in, eval_data_out)
-            eval_loss_values = np.append(eval_loss_values, eval_losses[-1])
+        for trial in range(5):
+            eval_loss, eval_accuracy, train_loss = nn.train(train_data_in, train_data_out, num_epochs, False, eval_data_in, eval_data_out)
+            eval_losses.append(eval_loss)
+            eval_accuracies.append(eval_accuracy)
+            eval_loss_values = np.append(eval_loss_values, eval_loss[-1])
+            train_loss_values = np.append(train_loss_values, train_loss)
             nn.reset()
 
-        mean_loss = np.mean(eval_loss_values)
-        print(f"MEAN LOSS: {mean_loss}")
+        mean_eval_loss = np.mean(eval_loss_values)
+        print(f"MEAN LOSS: {mean_eval_loss}")
         mean_standard_deviation = np.std(eval_loss_values)
-        if mean_loss < best_eval_loss:
-            print(f"UPDATED BEST LOSS: {mean_loss}")
-            best_eval_loss = mean_loss
+        mean_train_loss = np.mean(train_loss_values)
+        if mean_eval_loss < best_eval_loss:
+            print(f"UPDATED BEST LOSS: {mean_eval_loss}")
+            best_eval_loss = mean_eval_loss
             best_eval_standard_deviation = mean_standard_deviation
+            best_train_loss = mean_train_loss
             best_eval_losses = eval_losses
             best_eval_accuracies = eval_accuracies
             best_nn = nn
@@ -258,21 +288,22 @@ def random_search_hold_out(
         if (trial % 100 == 0):
             print(f"CONFIGURATION #{trial} TRAINED")
 
-    print(f"Best eval loss: {best_eval_loss}")
+    print(f"Best mean eval loss: {best_eval_loss}")
     print(f"Eval standard deviation: {best_eval_standard_deviation}")
     if (task == "Classification"):
         print(f"Eval accuracy: {best_eval_accuracies[-1]}")
+    print(f"Best mean train loss: {best_train_loss}")
     print(f"Obtained using model: {best_nn}")
 
     end_time = time.time()
     print(f"Elapsed time: {end_time - start_time}")
 
     if (task == "Classification"):
-        provaplot(best_eval_losses, best_eval_accuracies, len(best_eval_losses))
+        plot_cross_validation(best_eval_losses, best_eval_accuracies)
     else:
-        plot_loss(best_eval_losses, len(best_eval_losses))
+        plot_loss_cross_validation(best_eval_losses)
 
-    return best_nn, best_eval_loss
+    return best_nn, best_train_loss
 
 
 def random_search_k_fold(
@@ -292,6 +323,7 @@ def random_search_k_fold(
         ):
     best_eval_loss = float('inf')
     best_eval_standard_deviation = float('inf')
+    best_train_loss = float('inf')
     best_eval_losses = np.array([])
     best_eval_accuracies = np.array([])
     best_nn = None
@@ -327,6 +359,9 @@ def random_search_k_fold(
         num_epochs = random.choice(epochs)
 
         eval_loss_values = np.array([]) #Eval losses over all folds
+        all_eval_losses = []
+        all_eval_accuracies = []
+        train_loss_values = np.array([])
         nn = FF_Neural_Network(input_size, config, learning_rate, regularization, lambda_par, momentum, early_stopping)
 
         for i, fold in enumerate(input_data):
@@ -337,20 +372,25 @@ def random_search_k_fold(
             train_data_out = np.concatenate([output_data[j] for j in range(len(input_data)) if j != i])
             eval_data_in = fold
             eval_data_out = output_data[i]
-            for tries in range(3):
-                eval_losses, eval_accuracies = nn.train(train_data_in, train_data_out, num_epochs, False, eval_data_in, eval_data_out, 'Batch')
+            for trial in range(3):
+                eval_losses, eval_accuracies, train_loss = nn.train(train_data_in, train_data_out, num_epochs, False, eval_data_in, eval_data_out)
+                all_eval_losses.append(eval_losses)
+                all_eval_accuracies.append(eval_accuracies)
                 fold_loss_values = np.append(fold_loss_values, eval_losses[-1])
+                train_loss_values = np.append(train_loss_values, train_loss)
                 nn.reset()
-            mean_fold_loss = np.mean(fold_loss_values)
-            eval_loss_values = np.append(eval_loss_values, mean_fold_loss)
+            mean_fold_eval_loss = np.mean(fold_loss_values)
+            eval_loss_values = np.append(eval_loss_values, mean_fold_eval_loss)
 
         mean_loss = np.mean(eval_loss_values)
         print(f"MEAN LOSS: {mean_loss}")
         mean_standard_deviation = np.std(eval_loss_values)
+        mean_train_loss = np.mean(train_loss_values)
         if mean_loss < best_eval_loss:
             print(f"UPDATED BEST LOSS: {mean_loss}")
             best_eval_loss = mean_loss
             best_eval_standard_deviation = mean_standard_deviation
+            best_train_loss = mean_train_loss
             best_eval_losses = eval_losses
             best_eval_accuracies = eval_accuracies
             best_nn = nn
@@ -358,25 +398,22 @@ def random_search_k_fold(
         if (trial % 100 == 0):
             print(f"CONFIGURATION #{trial} TRAINED")
 
-    print(f"Best eval loss: {best_eval_loss}")
+    print(f"Best mean eval loss: {best_eval_loss}")
     print(f"Eval standard deviation: {best_eval_standard_deviation}")
     if (task == "Classification"):
         print(f"Eval accuracy: {best_eval_accuracies[-1]}")
+    print(f"Best mean train loss: {best_train_loss}")
     print(f"Obtained using model: {best_nn}")
 
     end_time = time.time()
     print(f"Elapsed time: {end_time - start_time}")
 
     if (task == "Classification"):
-        provaplot(best_eval_losses, best_eval_accuracies, len(best_eval_losses))
+        plot_cross_validation(best_eval_losses, best_eval_accuracies)
     else:
-        plot_loss(best_eval_losses, len(best_eval_losses))
+        plot_loss_cross_validation(best_eval_losses)
 
-    return best_nn, best_eval_loss
-
-
-
-
+    return best_nn, best_train_loss
 
 
 def all_layer_configs(num_units: List[int], num_layers: List[int], act_funs: list[ActivationFunction], input_size: int, output_size: int, task: str):

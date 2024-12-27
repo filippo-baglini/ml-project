@@ -75,3 +75,63 @@ def plot_loss(losses, epochs):
     plt.legend()
     plt.show()
     plt.close()  # Close the plot to avoid memory issues
+
+def plot_loss_cross_validation(losses):
+
+    num_runs = len(losses)
+
+    # Set up plot
+    plt.figure(figsize=(12, 5))
+
+    # Plot loss curve
+    plt.subplot(1, 2, 1)
+    for i, run_losses in enumerate(losses):
+        plt.plot(range(1, len(run_losses) + 1), run_losses, label=f'Run {i + 1}')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss Curve')
+    plt.legend()
+    
+    plt.tight_layout()
+    plt.show()
+    plt.close()  # Close the plot to free memory
+
+
+def plot_cross_validation(losses, accuracies):
+    """
+    Plots the loss and accuracy curves for multiple runs, handling varying lengths.
+
+    Parameters:
+    losses (list of np.ndarray): A list where each element is an array of losses for a run.
+    accuracies (list of np.ndarray): A list where each element is an array of accuracies for a run.
+    """
+    if len(losses) != len(accuracies):
+        raise ValueError("The number of loss and accuracy runs must be the same.")
+
+    num_runs = len(losses)
+
+    # Set up plot
+    plt.figure(figsize=(12, 5))
+
+    # Plot loss curve
+    plt.subplot(1, 2, 1)
+    for i, run_losses in enumerate(losses):
+        plt.plot(range(1, len(run_losses) + 1), run_losses, label=f'Run {i + 1}')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss Curve')
+    plt.legend()
+
+    # Plot accuracy curve
+    plt.subplot(1, 2, 2)
+    for i, run_accuracies in enumerate(accuracies):
+        plt.plot(range(1, len(run_accuracies) + 1), run_accuracies, label=f'Run {i + 1}')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Accuracy Curve')
+    plt.legend()
+
+    # Show plot
+    plt.tight_layout()
+    plt.show()
+    plt.close()  # Close the plot to free memory

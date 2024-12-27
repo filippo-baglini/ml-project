@@ -7,7 +7,6 @@ from .early_stopping import *
 from .utils.metrics import *
 from .utils.plot import *
 from .utils.data_split import shuffle_data
-import time
 from typing import List
 from typing import Optional, Literal, List
 
@@ -36,6 +35,7 @@ class FF_Neural_Network:
         if (self.input_size != self.layers[0].weights.shape[0]):
              raise RuntimeError("The input layer size and the input size must coincide")
     
+
     def fwd_computation(self, input):
         out = np.array([])
         for layer in self.layers:
@@ -43,6 +43,7 @@ class FF_Neural_Network:
             input = out
         return out
     
+
     def bwd_computation(self, output, pred):
        
         delta_prev_layer = np.array([])
@@ -117,7 +118,8 @@ class FF_Neural_Network:
             prev_layer = layer
 
         self.past_grad = current_grad
-    
+
+
     def train(
             self,
             input: np.ndarray,
@@ -126,6 +128,7 @@ class FF_Neural_Network:
             plot: bool = False,
             eval_input: Optional[np.ndarray] = None,
             eval_output: Optional[np.ndarray] = None,
+            best_train_loss: float = None,
             mode: Optional[Literal["Online", "Batch", "Minibatch"]] = "Batch",
             mb_number = None
             ):
@@ -149,6 +152,10 @@ class FF_Neural_Network:
             record_accuracy = False
 
         for epoch in range(epochs):
+        
+            if (best_train_loss is not None and len(train_losses) != 0):
+                if (train_losses[-1] < best_train_loss):
+                    break
 
             if (output.ndim != 1): 
                 predictions = np.empty((0, output.shape[1]))
@@ -212,18 +219,19 @@ class FF_Neural_Network:
 
         if (plot):
             if (record_accuracy):
-                provaplot(train_losses, train_accuracies, early_stopping_epoch + 1)
+                provaplot(train_losses, train_accuracies, len(train_losses))
                 if (eval_input is not None and eval_output is not None):
-                    provaplot(eval_losses, eval_accuracies, early_stopping_epoch + 1)
+                    provaplot(eval_losses, eval_accuracies, len(eval_losses))
             else:
-                plot_loss(train_losses, early_stopping_epoch + 1)
+                plot_loss(train_losses, len(train_losses))
                 if (eval_input is not None and eval_output is not None):
-                    plot_loss(eval_losses, early_stopping_epoch + 1)
+                    plot_loss(eval_losses, len(eval_losses))
 
         if (eval_input is not None and eval_output is not None):
-            return eval_losses, eval_accuracies
+            return eval_losses, eval_accuracies, train_losses[-1]
         return 
-    
+
+
     def evaluate(self, eval_input: np.ndarray, eval_output: np.ndarray, eval_losses: np.ndarray, eval_accuracies: np.ndarray, record_accuracy: bool):
 
         eval_loss = 0
@@ -241,6 +249,7 @@ class FF_Neural_Network:
                 return True
         eval_losses.append(eval_loss)
         return False
+
 
     def test(self, input: np.ndarray, output: np.ndarray):
 
@@ -263,18 +272,10 @@ class FF_Neural_Network:
         else:
             test_loss = mean_squared_error(output, y_test) #For the monk we use MSE loss
         
+        print(f"Test loss: {test_loss}")
         if (record_accuracy):
             print(f"Test accuracy: {accuracy}")
-        print(f"Test loss: {test_loss}")
 
-    def retrain(self, train_data_in: np.ndarray, train_data_out: np.ndarray, best_eval_loss: float, epochs: int):
-        #CAMBIARE
-        for epoch in range(epochs):
-            self.train(train_data_in, train_data_out, 1)
-            train_loss = mean_squared_error(train_data_out, self.fwd_computation(train_data_in))
-            print(train_loss)
-            if (train_loss < best_eval_loss):
-                break
 
     def reset(self):
         """Method to allow resetting the weights to retrain a model"""
@@ -282,6 +283,7 @@ class FF_Neural_Network:
         for layer in self.layers:
             layer.weights = layer.initialize_weights(layer.num_inputs, layer.num_units, layer.initialization_technique)
     
+
     def __str__(self):
         layer_descriptions = "\n".join(
             [f"Layer {i + 1}: {layer}" for i, layer in enumerate(self.layers)]

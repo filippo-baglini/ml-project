@@ -28,22 +28,22 @@ input, output = readTrainingCupData(data)
 
 train_data_in, eval_data_in, test_data_in, train_data_out, eval_data_out, test_data_out = hold_out_splitter(input, output, 0.25, 0.25)
 
-num_units = [20]  # Possible number of units for hidden layers
-num_layers = [1]
+num_units = (5, 30)  # Possible number of units for hidden layers
+num_layers = (1, 4)
 act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU]  # Hidden layer activation functions
-learning_rates = [Learning_rate(0.00004), Learning_rate(0.00005)]
-regularization = [None, "Tikhonov"]
-lambda_values = [None, 0.0001, 0.001, 0.01]
-momentum_values = [None, Momentum(0.9)]
-early_stopping = [Early_stopping(10, 0.0001)]
+learning_rates = (0.00001, 0.00005)
+regularization = [None, "Tikhonov", "Lasso"]
+lambda_values = (0.0001, 0.01)
+momentum_values = (0.1, 0.9)
+early_stopping = [Early_stopping(50, 0.0001), Early_stopping(100, 0.0001)]
 num_epochs = [1000]
 
-nn, best_train_loss = grid_search_hold_out(train_data_in, train_data_out, eval_data_in, eval_data_out, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs, task = "Regression")
+nn, best_train_loss = random_search_hold_out(train_data_in, train_data_out,eval_data_in, eval_data_out, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs, 1000, "Regression")
 nn.reset()
 
-# retrain_data_in = np.concatenate((train_data_in, eval_data_in))
-# retrain_data_out = np.concatenate((train_data_out, eval_data_out))
+retrain_data_in = np.concatenate((train_data_in, eval_data_in))
+retrain_data_out = np.concatenate((train_data_out, eval_data_out))
 
-nn.train(train_data_in, train_data_out, 1000, True, None, None, best_train_loss)
+nn.train(retrain_data_in, retrain_data_out, 300, True, None, None, best_train_loss)
 
 nn.test(test_data_in, test_data_out)

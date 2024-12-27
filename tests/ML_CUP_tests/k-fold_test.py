@@ -42,9 +42,9 @@ momentum_values = [None, Momentum(0.9), Nesterov_momentum(0.9)]
 early_stopping = [Early_stopping(10, 0.0001)]
 num_epochs = [1000]
 
-nn, best_eval_loss = grid_search_k_fold(input_split, output_split, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs, task = "Regression")
+nn, best_train_loss = grid_search_k_fold(input_split, output_split, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs, task = "Regression")
 nn.reset()
 
-nn.train(kfold_data_in, kfold_data_out, 1000, plot = True)
+nn.train(kfold_data_in, kfold_data_out, 1000, True, None, None, best_train_loss)
 
 nn.test(test_data_in, test_data_out)
