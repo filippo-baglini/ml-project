@@ -23,6 +23,7 @@ def read_monk_data(filename):
         print(f"An error occurred: {e}")
         return None, None
 
+
 def feature_one_hot_encoding(y, classes):
     '''
     y: array of labels
@@ -40,6 +41,7 @@ def feature_one_hot_encoding(y, classes):
                 one_hot[i, prev_classes + y[i,j] - 1] = 1
     return one_hot
 
+
 def readTrainingCupData(filename:str):
     input = []
     output = []
@@ -51,6 +53,7 @@ def readTrainingCupData(filename:str):
             output.append(values[-3:])
     return np.array(input), np.array(output)
 
+
 def readTestCupData(filename:str) -> np.ndarray:
     input = []
     with open(filename, 'r') as file:
@@ -59,3 +62,12 @@ def readTestCupData(filename:str) -> np.ndarray:
             values = list(map(float, line.split(',')[1:]))
             input.append(values)
     return input
+
+
+def custom_serializer(obj):
+    """
+    Convert non-serializable objects to JSON-compatible types using __str__ for string representation.
+    """
+    if hasattr(obj, "__str__"):
+        return str(obj)
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable.")

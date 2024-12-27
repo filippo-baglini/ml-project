@@ -31,7 +31,7 @@ train_data_in, eval_data_in, test_data_in, train_data_out, eval_data_out, test_d
 num_units = [20]  # Possible number of units for hidden layers
 num_layers = [1]
 act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU]  # Hidden layer activation functions
-learning_rates = [Learning_rate(0.00004), Learning_rate(0.00005)]
+learning_rates = [Learning_rate(0.00002), Learning_rate(0.00001)]
 regularization = [None, "Tikhonov"]
 lambda_values = [None, 0.0001, 0.001, 0.01]
 momentum_values = [None, Momentum(0.9)]

@@ -44,6 +44,5 @@ nn.reset()
 retrain_data_in = np.concatenate((train_data_in, eval_data_in))
 retrain_data_out = np.concatenate((train_data_out, eval_data_out))
 
-nn.train(retrain_data_in, retrain_data_out, 300, True, None, None, best_train_loss)
+nn.train(retrain_data_in, retrain_data_out, 1000, True, None, None, test_data_in, test_data_out, best_train_loss)
 
-nn.test(test_data_in, test_data_out)

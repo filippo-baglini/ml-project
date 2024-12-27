@@ -128,22 +128,25 @@ class FF_Neural_Network:
             plot: bool = False,
             eval_input: Optional[np.ndarray] = None,
             eval_output: Optional[np.ndarray] = None,
+            test_input: Optional[np.ndarray] = None,
+            test_output: Optional[np.ndarray] = None,
             best_train_loss: float = None,
             mode: Optional[Literal["Online", "Batch", "Minibatch"]] = "Batch",
             mb_number = None
             ):
         
+        train_losses = []
+        train_accuracies = []
+        eval_losses = []
+        eval_accuracies = []
+        test_losses = []
+        test_accuracies = []
+
         #Adjust the outputs to -1, 1 for Tanh
         if (isinstance(self.layers[-1].activation, Tanh)):
             output = 2 * output - 1
             if (eval_output is not None):
                 eval_output = 2 * eval_output - 1
-        
-        train_losses = []
-        train_accuracies = []
-        eval_losses = []
-        eval_accuracies = []
-        early_stopping_epoch = epochs - 1
 
         record_accuracy = True
 
@@ -179,7 +182,7 @@ class FF_Neural_Network:
                 
                 for i, batch in enumerate(input_batches):
                     pred = self.fwd_computation(batch)
-                    predictions = np.append(predictions, pred)
+                    predictions = np.concatenate((predictions, pred), axis=0)
                     self.bwd_computation(output_batches[i], pred)
             
             elif (mode == "Online"):
@@ -188,12 +191,13 @@ class FF_Neural_Network:
             
                 for i in range(len(input)):
                     pred = self.fwd_computation(input[i])
-                    predictions = np.append(predictions, pred)
+                    predictions = np.concatenate((predictions, pred), axis=0)
                     self.bwd_computation(np.array([output[i]]), pred)
             
             else:
                 raise RuntimeError(f"{mode} is not a training mode.")
 
+            #Computation of training loss and accuracy for the current epoch
             if (record_accuracy):
                 train_acc = compute_accuracy(output, predictions.reshape(predictions.shape[0]), type(self.layers[-1].activation).__name__)
                 train_accuracies.append(train_acc)
@@ -207,25 +211,45 @@ class FF_Neural_Network:
             #Evaluation and early stopping
             if (eval_input is not None and eval_output is not None):
                 if (self.evaluate(eval_input, eval_output, eval_losses, eval_accuracies, record_accuracy)):
-                    early_stopping_epoch = epoch
                     break
             
+            #Testing
+            if (test_input is not None and test_output is not None):
+                if (record_accuracy):
+                    test_loss , test_accuracy = self.test(test_input, test_output)
+                    test_losses.append(test_loss)
+                    test_accuracies.append(test_accuracy)
+                else:
+                    test_loss = self.test(test_input, test_output)
+                    test_losses.append(test_loss)
+            
             # if (epoch % 100 == 0 or epoch == epochs - 1):
-            #     print(f"Training Accuracy at epoch {epoch + 1} = {train_acc:.4f}")
+            #     if (record_accuracy):
+            #         print(f"Training Accuracy at epoch {epoch + 1} = {train_acc:.4f}")
             #     print(f"Training Loss at epoch: {epoch + 1} = {train_loss:.4f}")
             #     if (eval_input is not None and eval_output is not None):
-            #         print(f"Validation Accuracy at epoch {epoch + 1} = {eval_accuracies[-1]:.4f}")
+            #         if (record_accuracy):
+            #             print(f"Validation Accuracy at epoch {epoch + 1} = {eval_accuracies[-1]:.4f}")
             #         print(f"Validation Loss at epoch: {epoch + 1} = {eval_losses[-1]:.4f}")
 
         if (plot):
             if (record_accuracy):
-                provaplot(train_losses, train_accuracies, len(train_losses))
+                loss_accuracy_plot(train_losses, train_accuracies, len(train_losses))
                 if (eval_input is not None and eval_output is not None):
-                    provaplot(eval_losses, eval_accuracies, len(eval_losses))
+                    loss_accuracy_plot(eval_losses, eval_accuracies, len(eval_losses))
+                elif (test_input is not None and test_output is not None):
+                    loss_accuracy_plot(test_losses, test_accuracies, len(test_losses))
             else:
                 plot_loss(train_losses, len(train_losses))
                 if (eval_input is not None and eval_output is not None):
                     plot_loss(eval_losses, len(eval_losses))
+                elif (test_input is not None and test_output is not None):
+                    plot_loss(test_losses, len(test_losses))
+        
+        if (test_input is not None and test_output is not None):
+            print(f"Test loss: {test_losses[-1]}")
+            if (record_accuracy):
+                print(f"Test accuracy: {test_accuracies[-1]}")
 
         if (eval_input is not None and eval_output is not None):
             return eval_losses, eval_accuracies, train_losses[-1]
@@ -265,16 +289,16 @@ class FF_Neural_Network:
         y_test = self.fwd_computation(input)
 
         if (record_accuracy):
-            accuracy = compute_accuracy(output, y_test.reshape(y_test.shape[0]), type(self.layers[-1].activation).__name__)
+            test_accuracy = compute_accuracy(output, y_test.reshape(y_test.shape[0]), type(self.layers[-1].activation).__name__)
         
         if (isinstance(self.layers[-1].activation, Linear)):
             test_loss = mean_euclidean_error(output, y_test) #For the cup we use MEE loss
         else:
             test_loss = mean_squared_error(output, y_test) #For the monk we use MSE loss
         
-        print(f"Test loss: {test_loss}")
         if (record_accuracy):
-            print(f"Test accuracy: {accuracy}")
+            return test_loss, test_accuracy
+        return test_loss
 
 
     def reset(self):

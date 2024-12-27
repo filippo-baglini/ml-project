@@ -45,6 +45,4 @@ num_epochs = [300]
 nn, best_train_loss = random_search_k_fold(x_split, y_split, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs, 1000)
 nn.reset()
 
-nn.train(x, y, 300, True, None, None, best_train_loss)
-
-nn.test(x_test, y_true)
+nn.train(x, y, 300, True, None, None, x_test, y_true, best_train_loss)

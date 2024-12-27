@@ -27,18 +27,17 @@ monk_1_test = os.path.join(script_dir, "../../data/Monk/monks-1.test")
 
 # Read the data using the constructed path
 x, y =  read_monk_data(monk_1_train)
-#y = (2 * y - 1)
 x_test, y_true = read_monk_data(monk_1_test)
-#y_true = (2 * y_true - 1)
+
 x = feature_one_hot_encoding(x, [3,3,2,3,4,2])
 x_test = feature_one_hot_encoding(x_test, [3,3,2,3,4,2])
 
-x_train, x_val, y_train, y_val = train_val_splitter(x, y, 0.25)
+x_train, x_eval, y_train, y_eval = train_val_splitter(x, y, 0.25)
 
-nn = FF_Neural_Network(17, [Dense_layer(17, 4, Tanh), Dense_layer(4,  1, Tanh)], Learning_rate(0.004), None, None, None, Early_stopping(10, 0.0001))
+nn = FF_Neural_Network(17, [Dense_layer(17, 4, Tanh), Dense_layer(4,  1, Logistic)], Learning_rate(0.04), None, None, None, Early_stopping(5, 0.00001))
 
-nn.train(x_train, y_train, 300, True, x_val, y_val)
+_, _, best_train_loss = nn.train(x_train, y_train, 300, True, x_eval, y_eval)
+
 nn.reset()
-nn.train(x, y, 300, True, None, None)
+nn.train(x, y, 300, True, None, None, x_test, y_true, best_train_loss)
 
-nn.test(x_test, y_true)
