@@ -26,7 +26,7 @@ data = os.path.join(script_dir, "../../data/ML_Cup/ML-CUP24-TR.csv")
 
 input, output = readTrainingCupData(data)
 
-nn = FF_Neural_Network(12, [Dense_layer(12, 20, Leaky_ReLU),  Dense_layer(20,  3, Linear)], Learning_rate(0.00001), None, None, Nesterov_momentum(0.9))
+nn = FF_Neural_Network(12, [Dense_layer(12, 20, Leaky_ReLU),  Dense_layer(20,  3, Linear)], Learning_rate(0.000031), MEE(), None, None, Nesterov_momentum(0.9), Early_stopping(50, 0.00001))
 
 train_data_in, eval_data_in, test_data_in, train_data_out, eval_data_out, test_data_out = hold_out_splitter(input, output, 0.25, 0.25)
 

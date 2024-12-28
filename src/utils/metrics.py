@@ -39,17 +39,45 @@ def squared_loss(y_true, y_pred):
         raise ValueError("Shapes of y_true and y_pred must match.")
     return (y_true - y_pred) ** 2
 
-def mean_squared_error(y_true, y_pred):
-    
-    if (y_true.ndim == 1):
-        y_pred = np.squeeze(y_pred)
-    
-    mse = np.mean(squared_loss(y_true, y_pred))
-    
-    return mse 
 
-def mean_euclidean_error(y_true, y_pred):
-   
-    if (y_true.ndim == 1):
-        y_pred = np.squeeze(y_pred)
-    return np.mean(np.sqrt(np.sum((y_true - y_pred) ** 2, axis=1)))
+class Loss:
+
+    def __init__(self):
+        raise NotImplementedError
+    
+    def compute(self, predictions, output):
+        raise NotImplementedError
+    
+    def derivative(self, predictions, output):
+        raise NotImplementedError
+    
+class MSE(Loss):
+
+    def __init__(self):
+        self.type = "MSE"
+
+    def compute(self, predictions, output):
+        if (output.ndim == 1):
+            predictions = np.squeeze(predictions)
+        return np.mean(squared_loss(output, predictions))
+    
+    def derivative(self, predictions, output):
+        
+        return (predictions - output)
+
+class MEE(Loss):
+    
+    def __init__(self):
+        self.type = "MEE"
+    
+    def compute(self, predictions, output):
+        if (output.ndim == 1):
+            predictions = np.squeeze(predictions)
+        return np.mean(np.sqrt(np.sum((output - predictions) ** 2, axis = 1)))
+    
+    def derivative(self, predictions, output):
+
+        epsilon = 1e-8 #Small value to prevent division by zero
+        differences = predictions - output
+        distances = np.sqrt(np.sum(differences ** 2, axis = 1, keepdims = True)) + epsilon
+        return differences / distances

@@ -17,6 +17,7 @@ class FF_Neural_Network:
             input_size: int,
             layers: List[Layer],
             learning_rate: Learning_rate,
+            loss: Loss,
             regularized: Optional[Literal["Lasso", "Tikhonov"]] = None,
             lambda_par: Optional[float] = None,
             momentum: Optional[Momentum] = None,
@@ -26,6 +27,7 @@ class FF_Neural_Network:
         self.input_size = input_size
         self.layers = layers
         self.learning_rate = learning_rate
+        self.loss = loss
         self.regularized = regularized
         self.lambda_par = lambda_par
         self.momentum = momentum
@@ -63,9 +65,11 @@ class FF_Neural_Network:
                     past_grad = self.past_grad[0]
                     self.past_grad = np.delete(self.past_grad, 0)
                     weights = layer.weights + self.momentum() * past_grad
-                    delta = (pred - output) * layer.activation.derivative(np.dot(layer.input, weights)).squeeze()
+                    #delta = (pred - output) * layer.activation.derivative(np.dot(layer.input, weights)).squeeze() 
+                    delta = self.loss.derivative(pred, output) * layer.activation.derivative(np.dot(layer.input, weights)).squeeze() 
                 else:
-                    delta = (pred - output) * layer.activation.derivative(layer.net).squeeze()
+                    #delta = (pred - output) * layer.activation.derivative(layer.net).squeeze()
+                    delta = self.loss.derivative(pred, output) * layer.activation.derivative(layer.net).squeeze()
                
             else: #Hidden layer
                 if layer.input.ndim == 1:
@@ -95,7 +99,7 @@ class FF_Neural_Network:
                     grad = grad.reshape(grad.shape[0], 1)
                 grad += regularization
             else:
-                grad = self.learning_rate() * np.dot(layer.input.T, delta)
+                grad = (self.learning_rate() * np.dot(layer.input.T, delta)) 
                 if (grad.ndim == 1):
                     grad = grad.reshape(grad.shape[0], 1)
 
@@ -163,7 +167,7 @@ class FF_Neural_Network:
             if (output.ndim != 1): 
                 predictions = np.empty((0, output.shape[1]))
             else:
-                predictions = np.array([])
+                predictions = np.empty((0, 1))
 
             if (mode == 'Batch'):
                 pred = self.fwd_computation(input)
@@ -202,10 +206,7 @@ class FF_Neural_Network:
                 train_acc = compute_accuracy(output, predictions.reshape(predictions.shape[0]), type(self.layers[-1].activation).__name__)
                 train_accuracies.append(train_acc)
 
-            if (isinstance(self.layers[-1].activation, Linear)):
-                train_loss = mean_euclidean_error(output, predictions) #For the cup we use MEE loss
-            else:
-                train_loss = mean_squared_error(output, predictions) #For the monk we use MSE loss
+            train_loss = self.loss.compute(predictions, output) #For the monk we use MSE loss
             train_losses.append(train_loss)
 
             #Evaluation and early stopping
@@ -216,21 +217,21 @@ class FF_Neural_Network:
             #Testing
             if (test_input is not None and test_output is not None):
                 if (record_accuracy):
-                    test_loss , test_accuracy = self.test(test_input, test_output)
+                    test_loss, test_accuracy = self.test(test_input, test_output)
                     test_losses.append(test_loss)
                     test_accuracies.append(test_accuracy)
                 else:
                     test_loss = self.test(test_input, test_output)
                     test_losses.append(test_loss)
             
-            # if (epoch % 100 == 0 or epoch == epochs - 1):
-            #     if (record_accuracy):
-            #         print(f"Training Accuracy at epoch {epoch + 1} = {train_acc:.4f}")
-            #     print(f"Training Loss at epoch: {epoch + 1} = {train_loss:.4f}")
-            #     if (eval_input is not None and eval_output is not None):
-            #         if (record_accuracy):
-            #             print(f"Validation Accuracy at epoch {epoch + 1} = {eval_accuracies[-1]:.4f}")
-            #         print(f"Validation Loss at epoch: {epoch + 1} = {eval_losses[-1]:.4f}")
+            if (epoch % 100 == 0 or epoch == epochs - 1):
+                if (record_accuracy):
+                    print(f"Training Accuracy at epoch {epoch + 1} = {train_acc:.4f}")
+                print(f"Training Loss at epoch: {epoch + 1} = {train_loss:.4f}")
+                if (eval_input is not None and eval_output is not None):
+                    if (record_accuracy):
+                        print(f"Validation Accuracy at epoch {epoch + 1} = {eval_accuracies[-1]:.4f}")
+                    print(f"Validation Loss at epoch: {epoch + 1} = {eval_losses[-1]:.4f}")
 
         if (plot):
             if (record_accuracy):
@@ -262,10 +263,11 @@ class FF_Neural_Network:
         if (record_accuracy):
             eval_acc = compute_accuracy(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]), type(self.layers[-1].activation).__name__)
             eval_accuracies.append(eval_acc)
-        if (isinstance(self.layers[-1].activation, Linear)):
-            eval_loss = mean_euclidean_error(eval_output, self.fwd_computation(eval_input)) #For the cup we use MEE loss
-        else:
-            eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input)) #For the monk we use MSE loss
+        # if (isinstance(self.layers[-1].activation, Linear)):
+        #     eval_loss = mean_euclidean_error(eval_output, self.fwd_computation(eval_input)) #For the cup we use MEE loss
+        # else:
+        #     eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input)) #For the monk we use MSE loss
+        eval_loss = self.loss.compute(self.fwd_computation(eval_input), eval_output)
         if (self.early_stopping is not None):
             if (self.early_stopping(eval_losses, eval_loss)):
                 #print(f"Early stopping activated, halting training at epoch {epoch}.")
@@ -291,10 +293,7 @@ class FF_Neural_Network:
         if (record_accuracy):
             test_accuracy = compute_accuracy(output, y_test.reshape(y_test.shape[0]), type(self.layers[-1].activation).__name__)
         
-        if (isinstance(self.layers[-1].activation, Linear)):
-            test_loss = mean_euclidean_error(output, y_test) #For the cup we use MEE loss
-        else:
-            test_loss = mean_squared_error(output, y_test) #For the monk we use MSE loss
+        test_loss = self.loss.compute(y_test, output)
         
         if (record_accuracy):
             return test_loss, test_accuracy

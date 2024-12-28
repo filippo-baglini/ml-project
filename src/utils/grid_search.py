@@ -93,7 +93,7 @@ def grid_search_hold_out(
                                         "mean_eval_loss": round(mean_eval_loss, 4),
                                         "eval_loss_std": round(mean_standard_deviation, 4),
                                         "mean_train_loss": round(mean_train_loss, 4),
-                                        "mean_eval_accuracy": round(mean_accuracy, 4),
+                                        "mean_eval_accuracy": round(mean_accuracy, 4) if task == "Classification" else None
                                     }
 
                                     json.dump(configuration, json_file, default=custom_serializer)
@@ -187,7 +187,7 @@ def grid_search_k_fold(
                                         train_data_out = np.concatenate([output_data[j] for j in range(len(input_data)) if j != i])
                                         eval_data_in = fold
                                         eval_data_out = output_data[i]
-                                        for trial in range(3):
+                                        for trial in range(4):
                                             eval_losses, eval_accuracies, train_loss = nn.train(train_data_in, train_data_out, epochs, False, eval_data_in, eval_data_out)
                                             all_eval_losses.append(eval_losses)
                                             all_eval_accuracies.append(eval_accuracies)
@@ -352,7 +352,7 @@ def random_search_hold_out(
                 "mean_eval_loss": round(mean_eval_loss, 4),
                 "eval_loss_std": round(mean_standard_deviation, 4),
                 "mean_train_loss": round(mean_train_loss, 4),
-                "mean_eval_accuracy": round(mean_accuracy, 4),
+                "mean_eval_accuracy": round(mean_accuracy, 4) if task == "Classification" else None
             }
             
             json.dump(configuration, json_file, default=custom_serializer)
@@ -373,7 +373,10 @@ def random_search_hold_out(
     print(f"Best mean eval loss: {best_eval_loss}")
     print(f"Eval standard deviation: {best_eval_standard_deviation}")
     if (task == "Classification"):
-        print(f"Eval accuracy: {best_eval_accuracies[-1]}")
+        mean_accuracy = 0
+        for run in best_eval_accuracies:
+            mean_accuracy += run[-1]
+        print(f"Mean eval accuracy: {mean_accuracy / len(best_eval_accuracies)}")
     print(f"Best mean train loss: {best_train_loss}")
     print(f"Obtained using model: {best_nn}")
 
@@ -414,7 +417,7 @@ def random_search_k_fold(
 
     start_time = time.time()
 
-    with open("hold-out_random_search_results.jsonl", "w") as json_file:
+    with open("json/k-fold_random_search_results.jsonl", "w") as json_file:
         for trial in range(trials):
             config = generate_config(units_range, layers_range, activations, input_size, output_size, task)
 
@@ -455,7 +458,7 @@ def random_search_k_fold(
                 train_data_out = np.concatenate([output_data[j] for j in range(len(input_data)) if j != i])
                 eval_data_in = fold
                 eval_data_out = output_data[i]
-                for trial in range(3):
+                for tries in range(3):
                     eval_losses, eval_accuracies, train_loss = nn.train(train_data_in, train_data_out, num_epochs, False, eval_data_in, eval_data_out)
                     all_eval_losses.append(eval_losses)
                     all_eval_accuracies.append(eval_accuracies)
@@ -488,7 +491,7 @@ def random_search_k_fold(
                 "mean_eval_loss": round(mean_eval_loss, 4),
                 "eval_loss_std": round(mean_standard_deviation, 4),
                 "mean_train_loss": round(mean_train_loss, 4),
-                "mean_eval_accuracy": round(mean_accuracy, 4),
+                "mean_eval_accuracy": round(mean_accuracy, 4) if task == "Classification" else None
             }
             
             json.dump(configuration, json_file, default=custom_serializer)
@@ -499,17 +502,20 @@ def random_search_k_fold(
                 best_eval_loss = mean_eval_loss
                 best_eval_standard_deviation = mean_standard_deviation
                 best_train_loss = mean_train_loss
-                best_eval_losses = eval_losses
-                best_eval_accuracies = eval_accuracies
+                best_eval_losses = all_eval_losses
+                best_eval_accuracies = all_eval_accuracies
                 best_nn = nn
 
-            if (trial % 100 == 0):
+            if (trial % 10 == 0):
                 print(f"CONFIGURATION #{trial} TRAINED")
 
     print(f"Best mean eval loss: {best_eval_loss}")
     print(f"Eval standard deviation: {best_eval_standard_deviation}")
     if (task == "Classification"):
-        print(f"Eval accuracy: {best_eval_accuracies[-1]}")
+        mean_accuracy = 0
+        for run in best_eval_accuracies:
+            mean_accuracy += run[-1]
+        print(f"Mean eval accuracy: {mean_accuracy / len(best_eval_accuracies)}")
     print(f"Best mean train loss: {best_train_loss}")
     print(f"Obtained using model: {best_nn}")
 
@@ -517,9 +523,9 @@ def random_search_k_fold(
     print(f"Elapsed time: {end_time - start_time}")
 
     if (task == "Classification"):
-        plot_cross_validation(best_eval_losses, best_eval_accuracies)
+        plot_cross_validation(best_eval_losses, best_eval_accuracies, len(input_data))
     else:
-        plot_loss_cross_validation(best_eval_losses)
+        plot_loss_cross_validation(best_eval_losses, len(input_data))
 
     return best_nn, best_train_loss
 

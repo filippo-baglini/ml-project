@@ -33,14 +33,14 @@ x_test = feature_one_hot_encoding(x_test, [3,3,2,3,4,2])
 
 x_split, y_split = k_fold_splitter(x, y, 4) #should split x, y in folds
 
-num_units = [2, 3, 4, 6, 8, 10]  # Possible number of units for hidden layers
+num_units = [3, 4, 5, 6]  # Possible number of units for hidden layers
 num_layers = [1]
 act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU]  # Hidden layer activation functions
-learning_rates = [Learning_rate(0.04), Linear_decay_learning_rate(0.04, 0.02, 100), Learning_rate(0.02), Learning_rate(0.03), Linear_decay_learning_rate(0.05, 0.02, 100)]
+learning_rates = [Learning_rate(0.025), Learning_rate(0.03), Learning_rate(0.04), Learning_rate(0.05), Linear_decay_learning_rate(0.04, 0.02, 150), Linear_decay_learning_rate(0.04, 0.02, 100)]
 regularization = [None]
 lambda_values = [None]
-momentum_values = [None, Momentum(0.5), Nesterov_momentum(0.5), Momentum(0.9), Nesterov_momentum(0.9)]
-early_stopping = [Early_stopping(5, 0.0001), Early_stopping(7, 0.0001)]
+momentum_values = [None, Momentum(0.1), Momentum(0.25), Momentum(0.5), Momentum(0.7), Momentum(0.9), Nesterov_momentum(0.1), Nesterov_momentum(0.25), Nesterov_momentum(0.5), Nesterov_momentum(0.9)]
+early_stopping = [Early_stopping(4, 0.0001), Early_stopping(5, 0.0001), Early_stopping(7, 0.0001)]
 num_epochs = [300]
 
 nn, best_train_loss = grid_search_k_fold(x_split, y_split, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs)
