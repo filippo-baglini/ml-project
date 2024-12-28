@@ -2,6 +2,8 @@ import os
 
 import keras_tuner as kt
 import numpy as np
+from keras.src.backend.common.global_state import clear_session
+from keras.src.callbacks import EarlyStopping
 from sklearn.model_selection import KFold
 
 from cup_hypermodel import CupHyperModel
@@ -12,7 +14,7 @@ trainset = trainset[:, 1:]
 X = np.array(trainset[:, :-3])
 y = np.array(trainset[:, -3:])
 
-kfold = KFold(n_splits=4, shuffle=True)
+kfold = KFold(n_splits=4)
 fold_n = 1
 
 for train_index, val_index in kfold.split(X):
@@ -27,16 +29,19 @@ for train_index, val_index in kfold.split(X):
     # Configurazione della Grid Search
     tuner = kt.GridSearch(
         hypermodel,
-        objective=['mse', 'val_mse'],
+        objective='mse',
         directory=fold_dir,
         project_name='cup_nn'
     )
+
+    early_stopping = EarlyStopping(monitor='val_loss', patience=19, restore_best_weights=True)
 
     # Esecuzione della ricerca
     tuner.search(
         X_train, y_train,
         validation_data=(X_val, y_val),
         epochs=300,
+        callbacks=[early_stopping],
         verbose=0
     )
 
@@ -49,3 +54,6 @@ for train_index, val_index in kfold.split(X):
         print(f"{param}: {value}")
 
     fold_n += 1
+    
+    clear_session()
+    del tuner
