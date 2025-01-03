@@ -31,19 +31,27 @@ x_test, y_true = read_monk_data(monk_2_test)
 x = feature_one_hot_encoding(x, [3,3,2,3,4,2])
 x_test = feature_one_hot_encoding(x_test, [3,3,2,3,4,2])
 
+x, y = shuffle_data(x, y)
 x_split, y_split = k_fold_splitter(x, y, 4) #should split x, y in folds
 
-num_units = [3, 4, 5, 6]  # Possible number of units for hidden layers
+num_units = [5, 6, 7, 8]  # Possible number of units for hidden layers
 num_layers = [1]
 act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU]  # Hidden layer activation functions
-learning_rates = [Learning_rate(0.015), Learning_rate(0.02), Learning_rate(0.025), Learning_rate(0.027), Learning_rate(0.03)]
+learning_rates = [Learning_rate(0.015), Learning_rate(0.02), Learning_rate(0.025), Linear_decay_learning_rate(0.02, 0.01, 100), Linear_decay_learning_rate(0.02, 0.01, 120)]
+losses = [MSE()]
 regularization = [None, "Tikhonov", "Lasso"]
-lambda_values = [None, 0.0001, 0.001]
-momentum_values = [None, Momentum(0.1), Momentum(0.25), Momentum(0.5), Momentum(0.7), Momentum(0.9), Nesterov_momentum(0.1), Nesterov_momentum(0.25), Nesterov_momentum(0.5), Nesterov_momentum(0.9)]
-early_stopping = [Early_stopping(4, 0.00001), Early_stopping(5, 0.00001), Early_stopping(6, 0.00001)]
+lambda_values = [None, 0.0001, 0.002]
+momentum_values = [None, Momentum(0.1), Momentum(0.9), Nesterov_momentum(0.1), Nesterov_momentum(0.9)]
+early_stopping = [Early_stopping(8, 0.0001)]
 num_epochs = [300]
 
-nn, best_train_loss = grid_search_k_fold(x_split, y_split, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs)
+
+nn, best_train_loss = grid_search_k_fold(x_split, y_split, num_units, num_layers, act_funs, learning_rates, losses, regularization, lambda_values, momentum_values, early_stopping, num_epochs)
 nn.reset()
+
+x_train = np.concatenate([x_split[i] for i in range (len(x_split) - 1)])
+
+nn.adjust_learning_rate((x_train.shape[0]), x.shape[0])
+print(f"Learning rate during retraining: {nn.learning_rate}")
 
 nn.train(x, y, 300, True, None, None, x_test, y_true, best_train_loss)

@@ -23,24 +23,43 @@ script_dir = os.path.dirname(__file__)
 
 # Construct the relative path to the data file
 data = os.path.join(script_dir, "../../data/ML_Cup/ML-CUP24-TR.csv")
+test_data = os.path.join(script_dir, "../../data/ML_Cup/ML-CUP24-TS.csv")
 
 input, output = readTrainingCupData(data)
+input, output = shuffle_data(input, output)
+test_input = readTestCupData(test_data)
 
 kfold_data_in, test_data_in, kfold_data_out, test_data_out = train_test_splitter(input, output, 0.2)
 
 input_split, output_split = k_fold_splitter(kfold_data_in, kfold_data_out, 4) #should split x, y in folds
 
-num_units = [10]  # Possible number of units for hidden layers
-num_layers = [2, 3]
-act_funs = [Logistic, Tanh]  # Hidden layer activation functions
-learning_rates = [Learning_rate(0.00001), Learning_rate(0.00002)]
+num_units = [10, 15, 20, 25, 28, 30, 32, 35]  # Possible number of units for hidden layers
+num_layers = [1, 2]
+act_funs = [ReLU, Leaky_ReLU]  # Hidden layer activation functions
+learning_rates = [Learning_rate(0.00002), Learning_rate(0.00003), Linear_decay_learning_rate(0.00003, 0.00002, 400), Linear_decay_learning_rate(0.00004, 0.000025, 300)]
+losses = [MEE()]
 regularization = [None, "Tikhonov"]
-lambda_values = [None, 0.0001, 0.001]
-momentum_values = [None, Momentum(0.9), Nesterov_momentum(0.9)]
-early_stopping = [Early_stopping(10, 0.0001)]
-num_epochs = [1000]
+lambda_values = [None, 0.0001, 0.01, 0.00001, 0.001]
+momentum_values = [None, Momentum(0.35), Momentum(0.9), Nesterov_momentum(0.35), Nesterov_momentum(0.5), Nesterov_momentum(0.9)]
+early_stopping = [Early_stopping(30, 0.0001)]
+num_epochs = [2000]
 
-nn, best_train_loss = grid_search_k_fold(input_split, output_split, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs, task = "Regression")
+nn, best_train_loss1 = grid_search_k_fold(input_split, output_split, num_units, num_layers, act_funs, learning_rates, losses, regularization, lambda_values, momentum_values, early_stopping, num_epochs, task = "Regression")
 nn.reset()
 
-nn.train(kfold_data_in, kfold_data_out, 1000, True, None, None, test_data_in, test_data_out, best_train_loss)
+x_train = np.concatenate([input_split[i] for i in range (len(input_split) - 1)])
+x_train_eval = np.concatenate([input_split[i] for i in range (len(input_split))])
+
+nn.adjust_learning_rate((x_train.shape[0]), x_train_eval.shape[0])
+print(f"Learning rate during first retraining: {nn.learning_rate}")
+
+best_train_loss2 = nn.train(kfold_data_in, kfold_data_out, 2000, True, None, None, test_data_in, test_data_out, best_train_loss1)
+
+nn.reset()
+
+nn.adjust_learning_rate((x_train_eval.shape[0]), input.shape[0])
+print(f"Learning rate during final retraining: {nn.learning_rate}")
+
+train_loss = nn.train(input, output, 2000, True, None, None, None, None, best_train_loss2)
+print(f"Train loss of the final model for the blind test: {train_loss}")
+nn.blind_test_ML_cup(test_input)

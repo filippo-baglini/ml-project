@@ -7,6 +7,7 @@ from .early_stopping import *
 from .utils.metrics import *
 from .utils.plot import *
 from .utils.data_split import shuffle_data
+from .utils.data_utils import save_predictions
 from typing import List
 from typing import Optional, Literal, List
 
@@ -69,7 +70,7 @@ class FF_Neural_Network:
                     delta = self.loss.derivative(pred, output) * layer.activation.derivative(np.dot(layer.input, weights)).squeeze() 
                 else:
                     #delta = (pred - output) * layer.activation.derivative(layer.net).squeeze()
-                    delta = self.loss.derivative(pred, output) * layer.activation.derivative(layer.net).squeeze()
+                    delta = self.loss.derivative(pred, output) * layer.activation.derivative(layer.net).squeeze() 
                
             else: #Hidden layer
                 if layer.input.ndim == 1:
@@ -224,14 +225,14 @@ class FF_Neural_Network:
                     test_loss = self.test(test_input, test_output)
                     test_losses.append(test_loss)
             
-            if (epoch % 100 == 0 or epoch == epochs - 1):
-                if (record_accuracy):
-                    print(f"Training Accuracy at epoch {epoch + 1} = {train_acc:.4f}")
-                print(f"Training Loss at epoch: {epoch + 1} = {train_loss:.4f}")
-                if (eval_input is not None and eval_output is not None):
-                    if (record_accuracy):
-                        print(f"Validation Accuracy at epoch {epoch + 1} = {eval_accuracies[-1]:.4f}")
-                    print(f"Validation Loss at epoch: {epoch + 1} = {eval_losses[-1]:.4f}")
+            # if (epoch % 100 == 0 or epoch == epochs - 1):
+            #     if (record_accuracy):
+            #         print(f"Training Accuracy at epoch {epoch + 1} = {train_acc:.4f}")
+            #     print(f"Training Loss at epoch: {epoch + 1} = {train_loss:.4f}")
+            #     if (eval_input is not None and eval_output is not None):
+            #         if (record_accuracy):
+            #             print(f"Validation Accuracy at epoch {epoch + 1} = {eval_accuracies[-1]:.4f}")
+            #         print(f"Validation Loss at epoch: {epoch + 1} = {eval_losses[-1]:.4f}")
 
         if (plot):
             if (record_accuracy):
@@ -253,8 +254,8 @@ class FF_Neural_Network:
                 print(f"Test accuracy: {test_accuracies[-1]}")
 
         if (eval_input is not None and eval_output is not None):
-            return eval_losses, eval_accuracies, train_losses[-1]
-        return 
+            return train_losses, eval_losses, train_accuracies, eval_accuracies
+        return train_losses[-1]
 
 
     def evaluate(self, eval_input: np.ndarray, eval_output: np.ndarray, eval_losses: np.ndarray, eval_accuracies: np.ndarray, record_accuracy: bool):
@@ -263,10 +264,7 @@ class FF_Neural_Network:
         if (record_accuracy):
             eval_acc = compute_accuracy(eval_output, self.fwd_computation(eval_input).reshape(eval_output.shape[0]), type(self.layers[-1].activation).__name__)
             eval_accuracies.append(eval_acc)
-        # if (isinstance(self.layers[-1].activation, Linear)):
-        #     eval_loss = mean_euclidean_error(eval_output, self.fwd_computation(eval_input)) #For the cup we use MEE loss
-        # else:
-        #     eval_loss = mean_squared_error(eval_output, self.fwd_computation(eval_input)) #For the monk we use MSE loss
+
         eval_loss = self.loss.compute(self.fwd_computation(eval_input), eval_output)
         if (self.early_stopping is not None):
             if (self.early_stopping(eval_losses, eval_loss)):
@@ -298,6 +296,19 @@ class FF_Neural_Network:
         if (record_accuracy):
             return test_loss, test_accuracy
         return test_loss
+    
+
+    def blind_test_ML_cup (self, test_input: np.ndarray):
+        test_output = self.fwd_computation(test_input)
+        save_predictions(test_output, "blind test results")
+
+    
+    def adjust_learning_rate(self, batch_size_training, batch_size_retraining):
+        if (not isinstance(self.learning_rate, Linear_decay_learning_rate)):
+            self.learning_rate.eta *= (batch_size_training / batch_size_retraining)
+        else:
+            self.learning_rate.eta_start *= (batch_size_training / batch_size_retraining)
+            self.learning_rate.eta_tau *= (batch_size_training / batch_size_retraining)
 
 
     def reset(self):
@@ -316,6 +327,7 @@ class FF_Neural_Network:
             f"Input size: {self.input_size}\n"
             f"Layers:\n{layer_descriptions}\n"
             f"Learning rate: {self.learning_rate}\n"
+            f"Loss: {self.loss}\n"
             f"Regularization: {self.regularized or 'None'}\n"
             f"Lambda parameter: {self.lambda_par or 'None'}\n"
             f"Momentum parameter: {self.momentum or 'None'}\n"

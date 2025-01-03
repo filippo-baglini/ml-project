@@ -34,8 +34,8 @@ x_test = feature_one_hot_encoding(x_test, [3,3,2,3,4,2])
 
 x_train, x_eval, y_train, y_eval = train_val_splitter(x, y, 0.25)
 
-nn = FF_Neural_Network(17, [Dense_layer(17, 4, Leaky_ReLU), Dense_layer(4,  1, Logistic)], Learning_rate(0.01), None, None, Momentum(0.9), Early_stopping(20, 0.0001))
-
-_, _, best_train_loss = nn.train(x_train, y_train, 300, True, x_eval, y_eval)
+nn = FF_Neural_Network(17, [Dense_layer(17, 6, Leaky_ReLU), Dense_layer(6,  1, Logistic)], Linear_decay_learning_rate(0.05, 0.000525, 75), MEE(), "Lasso", 0.0000065, Momentum(0.9), Early_stopping(10, 0.00001))
+print(nn)
+_, _, best_train_loss = nn.train(x_train, y_train, 300, True, x_eval, y_eval, None, None, None, 'Minibatch', 4)
 nn.reset()
-nn.train(x, y, 300, True, None, None, x_test, y_true, best_train_loss)
+nn.train(x, y, 300, True, None, None, x_test, y_true, best_train_loss, 'Minibatch', 4)

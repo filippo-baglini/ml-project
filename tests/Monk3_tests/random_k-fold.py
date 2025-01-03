@@ -30,19 +30,26 @@ x_test, y_true = read_monk_data(monk_3_test)
 x = feature_one_hot_encoding(x, [3,3,2,3,4,2])
 x_test = feature_one_hot_encoding(x_test, [3,3,2,3,4,2])
 
+x, y = shuffle_data(x, y)
 x_split, y_split = k_fold_splitter(x, y, 4) #should split x, y in folds
 
 num_units = (2, 10)  # Possible number of units for hidden layers
 num_layers = (1, 1)
 act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU]  # Hidden layer activation functions
 learning_rates = (0.01, 0.05)
+losses = [MSE()]
 regularization = [None, "Tikhonov", "Lasso"]
 lambda_values = (0.0001, 0.01)
 momentum_values = (0.1, 0.95)
-early_stopping = [Early_stopping(7, 0.00001), Early_stopping(5, 0.0001)]
+early_stopping = [Early_stopping(12, 0.00001), Early_stopping(5, 0.0001)]
 num_epochs = [300]
 
-nn, best_train_loss = random_search_k_fold(x_split, y_split, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs, 10000)
+nn, best_train_loss = random_search_k_fold(x_split, y_split, num_units, num_layers, act_funs, learning_rates, losses, regularization, lambda_values, momentum_values, early_stopping, num_epochs, 5000)
 nn.reset()
+
+x_train = np.concatenate([x_split[i] for i in range (len(x_split) - 1)])
+
+nn.adjust_learning_rate((x_train.shape[0]), x.shape[0])
+print(f"Learning rate during retraining: {nn.learning_rate}")
 
 nn.train(x, y, 300, True, None, None, x_test, y_true, best_train_loss)

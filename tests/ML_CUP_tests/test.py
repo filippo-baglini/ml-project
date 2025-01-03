@@ -23,18 +23,30 @@ script_dir = os.path.dirname(__file__)
 
 # Construct the relative path to the data file
 data = os.path.join(script_dir, "../../data/ML_Cup/ML-CUP24-TR.csv")
+test_data = os.path.join(script_dir, "../../data/ML_Cup/ML-CUP24-TS.csv")
 
 input, output = readTrainingCupData(data)
+input, output = shuffle_data(input, output)
+test_input = readTestCupData(test_data)
 
-nn = FF_Neural_Network(12, [Dense_layer(12, 20, Leaky_ReLU),  Dense_layer(20,  3, Linear)], Learning_rate(0.000031), MEE(), None, None, Nesterov_momentum(0.9), Early_stopping(50, 0.00001))
 
-train_data_in, eval_data_in, test_data_in, train_data_out, eval_data_out, test_data_out = hold_out_splitter(input, output, 0.25, 0.25)
+nn = FF_Neural_Network(12, [Dense_layer(12, 32, ReLU),  Dense_layer(32,  3, Linear)], Learning_rate(2e-05), MEE(), None, None, Momentum(0.35), Early_stopping(30, 0.0001))
 
-nn.train(train_data_in, train_data_out, 1000, True, eval_data_in, eval_data_out)
+train_data_in, eval_data_in, test_data_in, train_data_out, eval_data_out, test_data_out = hold_out_splitter(input, output, 0.2, 0.2)
+
+best_train_losses, _, _, _ = nn.train(train_data_in, train_data_out, 2000, True, eval_data_in, eval_data_out)
+best_train_loss1 = best_train_losses[-1]
 nn.reset()
 
 retrain_data_in = np.concatenate((train_data_in, eval_data_in))
 retrain_data_out = np.concatenate((train_data_out, eval_data_out))
-nn.train(retrain_data_in, retrain_data_out, 1000, True, None, None, test_data_in, test_data_out)
 
-nn.test(test_data_in, test_data_out)
+nn.adjust_learning_rate((train_data_in.shape[0]), retrain_data_in.shape[0])
+print(f"Learning rate during retraining: {nn.learning_rate}")
+
+best_train_loss2 = nn.train(retrain_data_in, retrain_data_out, 2000, True, None, None, test_data_in, test_data_out, best_train_loss1)
+nn.reset()
+
+nn.adjust_learning_rate(retrain_data_in.shape[0], input.shape[0])
+
+nn.train(input, output, 2000, True, None, None, None, None, best_train_loss2)

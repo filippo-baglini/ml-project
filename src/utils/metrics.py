@@ -51,6 +51,9 @@ class Loss:
     def derivative(self, predictions, output):
         raise NotImplementedError
     
+    def __str__(self):
+        return f"{self.type}"
+    
 class MSE(Loss):
 
     def __init__(self):
@@ -63,7 +66,7 @@ class MSE(Loss):
     
     def derivative(self, predictions, output):
         
-        return (predictions - output)
+        return (predictions - output) 
 
 class MEE(Loss):
     
@@ -72,12 +75,16 @@ class MEE(Loss):
     
     def compute(self, predictions, output):
         if (output.ndim == 1):
-            predictions = np.squeeze(predictions)
+            return np.mean(np.sqrt((output - predictions) ** 2))
         return np.mean(np.sqrt(np.sum((output - predictions) ** 2, axis = 1)))
     
-    def derivative(self, predictions, output):
+    def derivative(self, predictions, output):  # derivative of MEE
+        # return -2 * (targets - outputs)/(np.sqrt(np.sum(np.square(targets - outputs))))
+        if output.ndim == 1:
+            differences = predictions - output
+            return differences / (np.sqrt(np.power(output - predictions, 2)) + 1e-12)
 
-        epsilon = 1e-8 #Small value to prevent division by zero
-        differences = predictions - output
-        distances = np.sqrt(np.sum(differences ** 2, axis = 1, keepdims = True)) + epsilon
-        return differences / distances
+        else:
+            differences = predictions - output
+            norms = np.linalg.norm(differences, axis=-1, keepdims=True) + 1e-12  # Evita divisioni per zero
+            return differences / norms

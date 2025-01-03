@@ -26,21 +26,29 @@ data = os.path.join(script_dir, "../../data/ML_Cup/ML-CUP24-TR.csv")
 
 input, output = readTrainingCupData(data)
 
+input, output = shuffle_data(input, output)
+
 kfold_data_in, test_data_in, kfold_data_out, test_data_out = train_test_splitter(input, output, 0.2)
 
 input_split, output_split = k_fold_splitter(kfold_data_in, kfold_data_out, 4) 
 
-num_units = (5, 30)  # Possible number of units for hidden layers
+num_units = (2, 35)  # Possible number of units for hidden layers
 num_layers = (1, 4)
 act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU]  # Hidden layer activation functions
-learning_rates = (0.00001, 0.00005)
+learning_rates = (0.00001, 0.0001)
+losses = [MEE()]
 regularization = [None, "Tikhonov", "Lasso"]
-lambda_values = (0.0001, 0.01)
-momentum_values = (0.1, 0.9)
-early_stopping = [Early_stopping(50, 0.0001), Early_stopping(100, 0.0001)]
-num_epochs = [1000]
+lambda_values = (0.00001, 0.1)
+momentum_values = (0.1, 0.95)
+early_stopping = [Early_stopping(20, 0.001), Early_stopping(50, 0.001)]
+num_epochs = [2000]
 
-nn, best_train_loss = random_search_hold_out(input_split, output_split, num_units, num_layers, act_funs, learning_rates, regularization, lambda_values, momentum_values, early_stopping, num_epochs, 5000, "Regression")
+nn, best_train_loss = random_search_k_fold(input_split, output_split, num_units, num_layers, act_funs, learning_rates, losses, regularization, lambda_values, momentum_values, early_stopping, num_epochs, 5000, "Regression")
 nn.reset()
+
+x_train = np.concatenate([input_split[i] for i in range (len(input_split) - 1)])
+
+nn.adjust_learning_rate((x_train.shape[0]), input.shape[0])
+print(f"Learning rate during retraining: {nn.learning_rate}")
 
 nn.train(kfold_data_in, kfold_data_out, 1000, True, None, None, test_data_in, test_data_out, best_train_loss)

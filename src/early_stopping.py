@@ -21,6 +21,6 @@ class Early_stopping:
     
     def __str__(self):
         return (
-            f"Early_stopping(patience={self.patience}, "
-            f"minimum_decrease={self.minimum_decrease})"
+            f"patience = {self.patience}, "
+            f"minimum_decrease = {self.minimum_decrease})"
         )
