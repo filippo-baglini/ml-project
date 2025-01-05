@@ -30,7 +30,7 @@ input, output = shuffle_data(input, output)
 test_input = readTestCupData(test_data)
 
 
-nn = FF_Neural_Network(12, [Dense_layer(12, 32, ReLU),  Dense_layer(32,  3, Linear)], Learning_rate(2e-05), MEE(), None, None, Momentum(0.35), Early_stopping(30, 0.0001))
+nn = FF_Neural_Network(12, [Dense_layer(12, 34, ELU), Dense_layer(34, 51, Leaky_ReLU), Dense_layer(51,  3, Linear)], Linear_decay_learning_rate(1.1831007236212656e-05, 5.915503618106328e-06, 176), MEE(), None, None, Momentum(0.8706547858207725), Early_stopping(30, 0.001))
 
 train_data_in, eval_data_in, test_data_in, train_data_out, eval_data_out, test_data_out = hold_out_splitter(input, output, 0.2, 0.2)
 

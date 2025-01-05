@@ -33,15 +33,15 @@ kfold_data_in, test_data_in, kfold_data_out, test_data_out = train_test_splitter
 
 input_split, output_split = k_fold_splitter(kfold_data_in, kfold_data_out, 4) #should split x, y in folds
 
-num_units = [10, 15, 20, 25, 28, 30, 32, 35]  # Possible number of units for hidden layers
+num_units = [15, 35, 40, 50, 60, 75, 80]  # Possible number of units for hidden layers
 num_layers = [1, 2]
-act_funs = [ReLU, Leaky_ReLU]  # Hidden layer activation functions
-learning_rates = [Learning_rate(0.00002), Learning_rate(0.00003), Linear_decay_learning_rate(0.00003, 0.00002, 400), Linear_decay_learning_rate(0.00004, 0.000025, 300)]
+act_funs = [ELU, Leaky_ReLU]  # Hidden layer activation functions
+learning_rates = [Linear_decay_learning_rate(0.00001, 0.000005, 200), Linear_decay_learning_rate(0.000025, 0.00001, 50), Linear_decay_learning_rate(0.00003, 0.000015, 150)]
 losses = [MEE()]
 regularization = [None, "Tikhonov"]
-lambda_values = [None, 0.0001, 0.01, 0.00001, 0.001]
-momentum_values = [None, Momentum(0.35), Momentum(0.9), Nesterov_momentum(0.35), Nesterov_momentum(0.5), Nesterov_momentum(0.9)]
-early_stopping = [Early_stopping(30, 0.0001)]
+lambda_values = [None, 0.0001, 0.00001]
+momentum_values = [None, Momentum(0.35), Momentum(0.45), Momentum(0.5), Momentum(0.9), Momentum(0.95)]
+early_stopping = [Early_stopping(30, 0.001)]
 num_epochs = [2000]
 
 nn, best_train_loss1 = grid_search_k_fold(input_split, output_split, num_units, num_layers, act_funs, learning_rates, losses, regularization, lambda_values, momentum_values, early_stopping, num_epochs, task = "Regression")
@@ -62,4 +62,7 @@ print(f"Learning rate during final retraining: {nn.learning_rate}")
 
 train_loss = nn.train(input, output, 2000, True, None, None, None, None, best_train_loss2)
 print(f"Train loss of the final model for the blind test: {train_loss}")
+time.sleep(10)
 nn.blind_test_ML_cup(test_input)
+
+#Learning_rate(0.000015), Learning_rate(0.00002), Linear_decay_learning_rate(0.0000225, 0.00001, 50), Linear_decay_learning_rate(0.00005, 0.000025, 60), Linear_decay_learning_rate(0.00006, 0.00003, 140), Linear_decay_learning_rate(0.000045, 0.00002, 20), Linear_decay_learning_rate(0.00001, 0.000005, 200), Linear_decay_learning_rate(0.000025, 0.00001, 50), Linear_decay_learning_rate(0.00003, 0.000015, 150)

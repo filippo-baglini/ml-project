@@ -173,7 +173,7 @@ def grid_search_k_fold(
     start_time = time.time()
 
     counter = 0
-    with open("json/k-fold_grid_search_results.jsonl", "w") as json_file:
+    with open("json/THIRD_k-fold_grid_search_results.jsonl", "w") as json_file:
         for learning_rate in learning_rates:
             for reg in regularization:
                 for loss in losses:
@@ -550,7 +550,7 @@ def random_search_k_fold(
                 best_eval_accuracies = all_eval_accuracies
                 best_nn = nn
 
-            if (trial % 100 == 0):
+            if (trial % 10 == 0):
                 print(f"CONFIGURATION #{trial} TRAINED")
 
     print(f"Best mean eval loss: {best_eval_loss}")

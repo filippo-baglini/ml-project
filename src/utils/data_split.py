@@ -62,9 +62,9 @@ def hold_out_splitter (input_data: np.ndarray, output_data: np.ndarray, perc_eva
 def k_fold_splitter(input_data: np.ndarray, output_data: np.ndarray, folds_number: int):
     """Function to split input and output data in folds, to be used for k-fold cross validation"""
 
-    input_shuffled, output_shuffled = shuffle_data(input_data, output_data)
+    #input_shuffled, output_shuffled = shuffle_data(input_data, output_data)
 
-    input_folds = np.array_split(input_shuffled, folds_number)
-    output_folds = np.array_split(output_shuffled, folds_number)
+    input_folds = np.array_split(input_data, folds_number)
+    output_folds = np.array_split(output_data, folds_number)
 
     return input_folds, output_folds

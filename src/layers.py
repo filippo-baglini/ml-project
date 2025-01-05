@@ -36,12 +36,14 @@ class Dense_layer(Layer):
         self.num_inputs = nInputs
         self.num_units = nUnits
         self.activation = activation()
+        
         if (initialization_technique is None and (isinstance(self.activation, Tanh) or isinstance(self.activation, Logistic))):
             initialization_technique = "Normal Xavier"
-        elif (initialization_technique is None and (isinstance(self.activation, ReLU) or isinstance(self.activation, Leaky_ReLU))):
+        elif (initialization_technique is None and (isinstance(self.activation, ReLU) or isinstance(self.activation, Leaky_ReLU) or isinstance(self.activation, ELU))):
             initialization_technique = "He"
         elif (initialization_technique is None):
             initialization_technique = "Random"
+
         self.initialization_technique = initialization_technique
         self.weights = self.initialize_weights(nInputs, nUnits, initialization_technique)
         self.biases = self.initialize_weights(1, nUnits, "Random")

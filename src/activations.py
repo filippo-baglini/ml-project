@@ -15,11 +15,14 @@ class Linear(ActivationFunction):
         return np.ones_like(input)
     
 class Logistic(ActivationFunction):
-    def fwd(self, input, alfa = 1):
-        return (1 / (1 + np.exp(-alfa * input)))
+    def __init__(self, alfa = 1):
+        self.alfa = alfa
+
+    def fwd(self, input):
+        return (1 / (1 + np.exp(-self.alfa * input)))
     
-    def derivative(self, input, alfa = 1):
-        f = (1 / (1 + np.exp(-alfa * input)))
+    def derivative(self, input):
+        f = self.fwd(input)
         return f * (1 - f)
 
 class Tanh(ActivationFunction):
@@ -37,22 +40,23 @@ class ReLU(ActivationFunction):
         return np.where(input > 0, 1, 0)
     
 class Leaky_ReLU(ActivationFunction):
+    def __init__(self, alfa = 0.01):
+        self.alfa = alfa  # Slope for negative values
+
     def fwd(self, input):
-        return(np.maximum(0.01 * input, input))
-    
-    def derivative(self, input):
-        return np.where(input > 0, 1, 0.01)
-    
-class Softmax(ActivationFunction):
-    def fwd(self, input):
-        e_x = np.exp(input - np.max(input, axis=-1, keepdims=True))
-        return e_x / np.sum(e_x, axis=-1, keepdims=True)
+        return np.maximum(self.alfa * input, input)
 
     def derivative(self, input):
-        s = self.fwd(input)
-    # Create a diagonal matrix of the softmax probabilities
-        diag_s = np.diag(s)
-    # Outer product of the softmax vector with itself
-        outer_s = np.outer(s, s)
-    # Jacobian is diag(s) - outer(s, s)
-        return diag_s - outer_s
+        return np.where(input > 0, 1, self.alfa)
+
+    
+class ELU(ActivationFunction):
+    def __init__(self, alfa = 1):
+        self.alfa = alfa  # Slope for negative values
+
+    def fwd(self, input):
+        return np.where(input > 0, input, self.alfa * (np.exp(input) - 1))
+
+    def derivative(self, input):
+        f = self.fwd(input)
+        return np.where(input > 0, 1, f + self.alfa)
