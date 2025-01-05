@@ -34,8 +34,11 @@ nn = FF_Neural_Network(12, [Dense_layer(12, 34, ELU), Dense_layer(34, 51, Leaky_
 
 train_data_in, eval_data_in, test_data_in, train_data_out, eval_data_out, test_data_out = hold_out_splitter(input, output, 0.2, 0.2)
 
-best_train_losses, _, _, _ = nn.train(train_data_in, train_data_out, 2000, True, eval_data_in, eval_data_out)
+best_train_losses, eval_losses, _, _ = nn.train(train_data_in, train_data_out, 2000, True, eval_data_in, eval_data_out)
 best_train_loss1 = best_train_losses[-1]
+best_eval_loss = eval_losses[-1]
+print(f"TRAIN LOSS: {best_train_loss1}")
+print(f"VALIDATION LOSS: {best_eval_loss}")
 nn.reset()
 
 retrain_data_in = np.concatenate((train_data_in, eval_data_in))
@@ -46,7 +49,9 @@ print(f"Learning rate during retraining: {nn.learning_rate}")
 
 best_train_loss2 = nn.train(retrain_data_in, retrain_data_out, 2000, True, None, None, test_data_in, test_data_out, best_train_loss1)
 nn.reset()
+print(f"TRAIN LOSS: {best_train_loss2}")
 
 nn.adjust_learning_rate(retrain_data_in.shape[0], input.shape[0])
 
-nn.train(input, output, 2000, True, None, None, None, None, best_train_loss2)
+final_train_loss = nn.train(input, output, 2000, True, None, None, None, None, best_train_loss2)
+print(f"TRAIN LOSS: {final_train_loss}")

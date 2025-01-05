@@ -173,7 +173,7 @@ def grid_search_k_fold(
     start_time = time.time()
 
     counter = 0
-    with open("json/THIRD_k-fold_grid_search_results.jsonl", "w") as json_file:
+    with open("json/k-fold_grid_search_results.jsonl", "w") as json_file:
         for learning_rate in learning_rates:
             for reg in regularization:
                 for loss in losses:

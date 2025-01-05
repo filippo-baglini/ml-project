@@ -66,10 +66,8 @@ class FF_Neural_Network:
                     past_grad = self.past_grad[0]
                     self.past_grad = np.delete(self.past_grad, 0)
                     weights = layer.weights + self.momentum() * past_grad
-                    #delta = (pred - output) * layer.activation.derivative(np.dot(layer.input, weights)).squeeze() 
                     delta = self.loss.derivative(pred, output) * layer.activation.derivative(np.dot(layer.input, weights)).squeeze() 
                 else:
-                    #delta = (pred - output) * layer.activation.derivative(layer.net).squeeze()
                     delta = self.loss.derivative(pred, output) * layer.activation.derivative(layer.net).squeeze() 
                
             else: #Hidden layer
@@ -109,7 +107,7 @@ class FF_Neural_Network:
             bias_update = self.learning_rate() * np.sum(delta, axis=0, keepdims=True)
 
             #Momentum
-            if (not isinstance(self.momentum, Nesterov_momentum) and isinstance(self.momentum, Momentum) and self.past_grad.size != 0):
+            if (isinstance(self.momentum, Momentum) and not isinstance(self.momentum, Nesterov_momentum) and self.past_grad.size != 0):
                 past_grad = self.past_grad[0]
                 self.past_grad = np.delete(self.past_grad, 0)
                 layer.weights -= grad + self.momentum() * past_grad
@@ -122,6 +120,8 @@ class FF_Neural_Network:
             delta_prev_layer = delta
             prev_layer = layer
 
+        if isinstance(self.learning_rate, Linear_decay_learning_rate):
+            self.learning_rate.update_counter()
         self.past_grad = current_grad
 
 
@@ -303,7 +303,13 @@ class FF_Neural_Network:
         save_predictions(test_output, "blind test results")
 
     
-    def adjust_learning_rate(self, batch_size_training, batch_size_retraining):
+    def adjust_learning_rate(self, batch_size_training: int, batch_size_retraining: int):
+        """
+        Since the gradient computation depends on the batch size since its value is not normalized,
+        this method is used to adjust the learning rate when retraining on a larger amount of
+        training data
+        """
+
         if (not isinstance(self.learning_rate, Linear_decay_learning_rate)):
             self.learning_rate.eta *= (batch_size_training / batch_size_retraining)
         else:

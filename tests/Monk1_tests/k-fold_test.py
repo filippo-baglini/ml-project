@@ -35,9 +35,9 @@ x, y = shuffle_data(x, y)
 x_split, y_split = k_fold_splitter(x, y, 4) #should split x, y in folds
 
 
-num_units = [5, 6, 7, 8]  # Possible number of units for hidden layers
+num_units = [5, 6, 7, 8]
 num_layers = [1]
-act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU]  # Hidden layer activation functions
+act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU] 
 learning_rates = [Learning_rate(0.025), Learning_rate(0.03), Learning_rate(0.035), Learning_rate(0.04), Learning_rate(0.0475), Linear_decay_learning_rate(0.04, 0.02, 100), Linear_decay_learning_rate(0.05, 0.03, 100)]
 losses = [MSE()]
 regularization = [None]

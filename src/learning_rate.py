@@ -35,9 +35,12 @@ class Linear_decay_learning_rate(Learning_rate):
         if (self.counter == self.tau):
             return self.eta_tau
 
-        self.counter += 1
+        #self.counter += 1
         eta = (1 - (self.counter / self.tau)) * self.eta_start + (self.counter / self.tau) * self.eta_tau
         return eta
+    
+    def update_counter(self):
+        self.counter += 1
     
     def __str__(self):
         return (

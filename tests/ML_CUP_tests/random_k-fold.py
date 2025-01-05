@@ -34,8 +34,8 @@ input_split, output_split = k_fold_splitter(kfold_data_in, kfold_data_out, 4)
 
 num_units = (2, 80)  # Possible number of units for hidden layers
 num_layers = (1, 4)
-act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU, ELU]  # Hidden layer activation functions
-learning_rates = (0.00001, 0.0001)
+act_funs = [Tanh, ReLU, Leaky_ReLU, ELU]  # Hidden layer activation functions
+learning_rates = (0.00001, 0.00007)
 losses = [MEE()]
 regularization = [None, "Tikhonov", "Lasso"]
 lambda_values = (0.00001, 0.1)

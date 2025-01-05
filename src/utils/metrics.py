@@ -17,11 +17,6 @@ def compute_accuracy(y_true, y_pred, activation_function="Logistic", threshold=0
         # Threshold predictions at 0 for binary classification
          predicted_labels = np.where(y_pred >= 0, 1, -1)
     
-    elif activation_function == "Softmax":
-        # For multi-class classification, take the argmax
-        predicted_labels = np.argmax(y_pred, axis=1)
-        y_true = np.argmax(y_true, axis=1)  # One-hot encoded ground truth to class indices
-    
     elif activation_function == "Linear":
         # For regression tasks, accuracy might not be meaningful.
         raise ValueError("Accuracy is not typically defined for regression tasks.")
@@ -78,13 +73,13 @@ class MEE(Loss):
             return np.mean(np.sqrt((output - predictions) ** 2))
         return np.mean(np.sqrt(np.sum((output - predictions) ** 2, axis = 1)))
     
-    def derivative(self, predictions, output):  # derivative of MEE
-        # return -2 * (targets - outputs)/(np.sqrt(np.sum(np.square(targets - outputs))))
+    def derivative(self, predictions, output):  
+        
         if output.ndim == 1:
             differences = predictions - output
             return differences / (np.sqrt(np.power(output - predictions, 2)) + 1e-12)
 
         else:
             differences = predictions - output
-            norms = np.linalg.norm(differences, axis=-1, keepdims=True) + 1e-12  # Evita divisioni per zero
+            norms = np.linalg.norm(differences, axis=-1, keepdims=True) + 1e-12  # Avoid dividing by 0
             return differences / norms

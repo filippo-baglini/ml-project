@@ -1,0 +1,70 @@
+-----------Hyperparameters range for random k-fold--------------
+
+num_units = (2, 8)  
+num_layers = (1, 1)
+act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU]  
+learning_rates = (0.001, 0.05)
+losses = [MSE()]
+regularization = [None, "Tikhonov", "Lasso"]
+lambda_values = (0.0001, 0.01)
+momentum_values = (0.1, 0.95)
+early_stopping = [Early_stopping(8, 0.0001), Early_stopping(6, 0.0001)]
+num_epochs = [300]
+
+-------------Model returned-------------
+
+Best mean eval loss: 0.06104503970854535
+Eval standard deviation: 0.03127173618017296
+Mean eval accuracy: 0.9344086021505378
+Best mean train loss: 0.042574856888772376
+Obtained using model: FF_Neural_Network:
+Input size: 17
+Layers:
+Layer 1: Dense_layer(nInputs=17, nUnits=2, activation=ReLU, initialization_technique=He)
+Layer 2: Dense_layer(nInputs=2, nUnits=1, activation=Logistic, initialization_technique=Normal Xavier)
+Learning rate: Linear_decay_learning_rate(eta_start=0.031669260340118, eta_tau=0.015834630170059, tau=29)
+Loss: MSE
+Regularization: None
+Lambda parameter: None
+Momentum parameter: None
+Early stopping: (patience = 12, minimum_decrease = 1e-05)
+Elapsed time: 822.9983997344971
+Learning rate during retraining: Linear_decay_learning_rate(eta_start=0.023881737305662752, eta_tau=0.011940868652831376, tau=29)
+Test loss: 0.048602486366431746
+Test accuracy: 0.9467592592592593
+
+
+-----------Hyperparameters for k-fold grid search--------------
+
+num_units = [2, 3, 4, 5]  
+num_layers = [1]
+act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU] 
+learning_rates = [Learning_rate(0.025), Learning_rate(0.03), Learning_rate(0.04), Linear_decay_learning_rate(0.3, 0.15, 50), Linear_decay_learning_rate(0.04, 0.02, 50), Linear_decay_learning_rate(0.032, 0.016, 30)]
+losses = [MSE()]
+regularization = [None, "Tikhonov"]
+lambda_values = [None, 0.00001, 0.0001, 0.001]
+momentum_values = [None, Momentum(0.1), Momentum(0.25), Momentum(0.5), Momentum(0.9), Nesterov_momentum(0.1), Nesterov_momentum(0.25), Nesterov_momentum(0.5), Nesterov_momentum(0.9)]
+early_stopping = [Early_stopping(12, 0.0001), Early_stopping(8, 0.0001)]
+num_epochs = [300]
+
+-------------Model returned-------------
+
+Best mean eval loss: 0.0583535548707636
+Eval standard deviation: 0.01584006481554008
+Mean eval accuracy: 0.9403897849462366
+Best mean train loss: 0.04033863356628936
+Obtained using model: FF_Neural_Network:
+Input size: 17
+Layers:
+Layer 1: Dense_layer(nInputs=17, nUnits=4, activation=ReLU, initialization_technique=He)
+Layer 2: Dense_layer(nInputs=4, nUnits=1, activation=Logistic, initialization_technique=Normal Xavier)
+Learning rate: Learning_rate(eta=0.025)
+Loss: MSE
+Regularization: None
+Lambda parameter: None
+Momentum parameter: None
+Early stopping: (patience = 12, minimum_decrease = 0.0001)
+Elapsed time: 1651.8460342884064
+Learning rate during retraining: Learning_rate(eta=0.018647540983606558)
+Test loss: 0.029921903108000077
+Test accuracy: 0.9629629629629629

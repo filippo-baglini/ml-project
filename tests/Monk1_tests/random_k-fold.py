@@ -33,9 +33,9 @@ x_test = feature_one_hot_encoding(x_test, [3,3,2,3,4,2])
 x, y = shuffle_data(x, y)
 x_split, y_split = k_fold_splitter(x, y, 4) #should split x, y in folds
 
-num_units = (2, 8)  # Possible number of units for hidden layers
+num_units = (2, 8) 
 num_layers = (1, 1)
-act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU]  # Hidden layer activation functions
+act_funs = [Logistic, Tanh, ReLU, Leaky_ReLU]  
 learning_rates = (0.001, 0.05)
 losses = [MSE()]
 regularization = [None, "Tikhonov", "Lasso"]
