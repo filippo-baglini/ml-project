@@ -14,17 +14,17 @@ X = np.array(trainset[:, :-3])
 y = np.array(trainset[:, -3:])
 
 model = keras.Sequential([
-            layers.Input(shape=(X.shape[1],)),
-            layers.Dense(43, activation='tanh'),
-            layers.Dropout(0.2),
-            layers.Dense(56, activation='tanh'),
-            layers.Dense(3)
-        ])
+    layers.Input(shape=(X.shape[1],)),
+    layers.Dense(43, activation='tanh'),
+    layers.Dropout(0.2),
+    layers.Dense(56, activation='tanh'),
+    layers.Dense(3)
+])
 
-opt = keras.optimizers.SGD(learning_rate=0.004, momentum=0.9, weight_decay=0.0065)
+opt = keras.optimizers.Adam(learning_rate=0.004, weight_decay=0.0065, clipnorm=0.5)
 model.compile(loss='mse', metrics=['mse', Utils.euclidean_distance], optimizer=opt)
 
-h = model.fit(X, y, epochs=1000, validation_split=0.2)
+h = model.fit(X, y, epochs=500)
 
 print("Loss evaluate: " + str(model.evaluate(X, y)))
 print("Loss history: " + str(h.history['loss'][-1]))

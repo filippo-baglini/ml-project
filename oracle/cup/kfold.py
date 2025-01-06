@@ -35,7 +35,7 @@ for train_index, val_index in kfold.split(X):
         layers.Dense(3)
     ])
 
-    opt = keras.optimizers.SGD(learning_rate=0.004, momentum=0.9, weight_decay=0.0065)
+    opt = keras.optimizers.Adam(learning_rate=0.004, weight_decay=0.0065, clipnorm=0.5)
     model.compile(loss='mse', metrics=['mse',Utils.euclidean_distance], optimizer=opt)
 
     early_stopping = EarlyStopping(monitor='val_loss', patience=19, restore_best_weights=True)

@@ -23,11 +23,7 @@ class CupHyperModel(kt.HyperModel):
             layers.Dense(3)
         ])
 
-        optimizer = keras.optimizers.SGD(
-            learning_rate=0.003,
-            momentum=0.9,
-            weight_decay=hp.Float('weight_decay', min_value=0.004, max_value=0.008, step=0.001),
-        )
+        optimizer = keras.optimizers.Adam(learning_rate=0.004, weight_decay=0.0065, clipnorm=0.5)
 
         model.compile(
             optimizer=optimizer,
