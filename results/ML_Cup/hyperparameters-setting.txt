@@ -1,0 +1,70 @@
+-----------Hyperparameters range for random k-fold--------------
+
+num_units = (2, 80) 
+num_layers = (1, 4)
+act_funs = [Tanh, ReLU, Leaky_ReLU, ELU]  
+learning_rates = (0.00001, 0.00007)
+losses = [MEE()]
+regularization = [None, "Tikhonov", "Lasso"]
+lambda_values = (0.00001, 0.1)
+momentum_values = (0.1, 0.95)
+early_stopping = [Early_stopping(30, 0.001), Early_stopping(50, 0.001)]
+num_epochs = [2000]
+
+-------------Model returned-------------
+
+Best mean eval loss: 0.7886948608726443
+Eval standard deviation: 0.06069618629433846
+Best mean train loss: 0.7129000873968231
+Obtained using model: FF_Neural_Network:
+Input size: 12
+Layers:
+Layer 1: Dense_layer(nInputs=12, nUnits=34, activation=ELU, initialization_technique=Random)
+Layer 2: Dense_layer(nInputs=34, nUnits=51, activation=Leaky_ReLU, initialization_technique=He)
+Layer 3: Dense_layer(nInputs=51, nUnits=3, activation=Linear, initialization_technique=Random)
+Learning rate: Linear_decay_learning_rate(eta_start=1.1831007236212656e-05, eta_tau=5.915503618106328e-06, tau=176)
+Loss: MEE
+Regularization: None
+Lambda parameter: None
+Momentum parameter: Momentum(value=0.8706547858207725)
+Early stopping: (patience = 30, minimum_decrease = 0.001)
+Elapsed time: 20974.837806224823
+Learning rate during retraining: Linear_decay_learning_rate(eta_start=7.098604341727593e-06, eta_tau=3.5493021708637967e-06, tau=176)
+Test loss: 0.9269710840667313
+
+
+-----------Hyperparameters for k-fold grid search--------------
+
+num_units = [15, 35, 40, 50, 60, 75, 80] 
+num_layers = [1, 2] 
+act_funs = [ELU, Leaky_ReLU]  
+learning_rates = [Learning_rate(0.000015), Learning_rate(0.00002), Linear_decay_learning_rate(0.0000225, 0.00001, 50), Linear_decay_learning_rate(0.00005, 0.000025, 60), Linear_decay_learning_rate(0.00006, 0.00003, 140), Linear_decay_learning_rate(0.000045, 0.00002, 20), Linear_decay_learning_rate(0.00001, 0.000005, 200), Linear_decay_learning_rate(0.000025, 0.00001, 50), Linear_decay_learning_rate(0.00003, 0.000015, 150)]
+losses = [MEE()]
+regularization = [None, "Tikhonov"]
+lambda_values = [None, 0.0001, 0.00001]
+momentum_values = [None, Momentum(0.35), Momentum(0.45), Momentum(0.5), Momentum(0.9), Momentum(0.95)]
+early_stopping = [Early_stopping(30, 0.001)]
+num_epochs = [2000]
+
+-------------Model returned-------------
+
+Best mean eval loss: 0.7963684595520474
+Eval standard deviation: 0.1043612236051545
+Best mean train loss: 0.713240144235687
+Obtained using model: FF_Neural_Network:
+Input size: 12
+Layers:
+Layer 1: Dense_layer(nInputs=12, nUnits=60, activation=ELU, initialization_technique=He)
+Layer 2: Dense_layer(nInputs=60, nUnits=40, activation=ELU, initialization_technique=He)
+Layer 3: Dense_layer(nInputs=40, nUnits=3, activation=Linear, initialization_technique=Random)
+Learning rate: Linear_decay_learning_rate(eta_start=1e-05, eta_tau=5e-06, tau=200)
+Loss: MEE
+Regularization: None
+Lambda parameter: None
+Momentum parameter: Momentum(value=0.95)
+Early stopping: (patience = 30, minimum_decrease = 0.001)
+Elapsed time: 12045.795566082
+Learning rate during first retraining: Linear_decay_learning_rate(eta_start=7.500000000000001e-06, eta_tau=3.7500000000000005e-06, tau=200)
+Test loss: 0.8302807342603009
+Learning rate during final retraining: Linear_decay_learning_rate(eta_start=6.000000000000001e-06, eta_tau=3.0000000000000005e-06, tau=200)
+Train loss of the final model for the blind test: 0.7428249167315841
