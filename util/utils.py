@@ -1,7 +1,7 @@
+import math
 import os
 
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
 import tensorflow as tf
 
@@ -9,10 +9,11 @@ import tensorflow as tf
 class Utils:
 
     @staticmethod
-    def save_predictions(y_pred, folder = "."):
+    def save_predictions(y_pred, folder="."):
         # Assicurati che `y_pred` abbia 3 colonne
         if y_pred.shape[1] != 3:
-            raise ValueError(f"Le predizioni devono avere esattamente 3 colonne (out_x, out_y, out_z). Trovato: {y_pred.shape[1]}")
+            raise ValueError(
+                f"Le predizioni devono avere esattamente 3 colonne (out_x, out_y, out_z). Trovato: {y_pred.shape[1]}")
 
         # Prepara gli ID e combina i dati
         ids = np.arange(1, y_pred.shape[0] + 1).reshape(-1, 1)  # ID da 1 a n interi
@@ -37,52 +38,99 @@ class Utils:
         return os.path.abspath(output_file)
 
     @staticmethod
-    def plot_histories(h_list):
+    def plot_histories(histories, metrics, config=None):
         """
-        Plotta i grafici della Training Loss (MSE) e Validation Loss (val_MSE) per ogni fold.
+        Plot training metrics from multiple keras History objects.
 
-        Parameters:
-        - h_list: lista di oggetti history, uno per ogni fold.
+        Args:
+            histories (list): List of keras History objects
+            metrics (list): List of metrics to plot (e.g. ['loss', 'accuracy'])
+            config (dict): Configuration dictionary with the following optional parameters:
+                - aggregate_loss (bool): If True, training and validation metrics are plotted
+                                       in the same graph (default: True)
+                - titles (list): List of titles for each plot. Use %i to include the fold number
+                                (default: metric names)
+                - split (bool): If True, creates separate plots, else combines all in one figure
+                               (default: False)
         """
-        import matplotlib.pyplot as plt
+        # Default configuration
+        default_config = {
+            'aggregate_loss': True,
+            'titles': None,
+            'split': False
+        }
 
-        num_folds = len(h_list)
+        # Update default config with provided config
+        if config is None:
+            config = {}
+        config = {**default_config, **config}
 
-        # Imposta la dimensione della figura: un grafico per ogni fold
-        fig, axes = plt.subplots(num_folds, 1, figsize=(12, 4 * num_folds))
+        # Generate default titles if not provided
+        if config['titles'] is None:
+            config['titles'] = metrics
 
-        # Garantisce che `axes` sia sempre un array (anche con una sola fold)
-        if num_folds == 1:
-            axes = [axes]
+        # Calculate number of rows and columns for subplot layout
+        n_metrics = len(metrics)
+        n_histories = len(histories)
+        total_plots = n_metrics * n_histories
 
-        for i, history in enumerate(h_list):
-            # Recupera la loss (MSE) dal dizionario `history`
-            mse = history.history['mse']
-            val_mse = history.history.get('val_mse')  # Usa .get() per rendere opzionale val_mse
+        # Determine number of columns based on metrics and configuration
+        n_cols = 1  # Default to 1 column
+        if not config['split'] and n_metrics > 1:
+            n_cols = 2  # Use 2 columns only if we have multiple metrics
 
-            # Plot della Training Loss
-            axes[i].plot(mse, label='Training MSE', color='blue')
+        n_rows = math.ceil(total_plots / n_cols)
 
-            # Plot della Validation Loss, se disponibile
-            if val_mse is not None:
-                axes[i].plot(val_mse, label='Validation MSE', color='red')
+        # If not split, create the figure with all subplots
+        if not config['split']:
+            plt.figure(figsize=(7.5 * n_cols, 5 * n_rows))
 
-            axes[i].set_title(f'Fold {i + 1} - Training and Validation MSE')
-            axes[i].set_xlabel('Epochs')
-            axes[i].set_ylabel('MSE')
-            axes[i].legend()
+        # Plot each history
+        for h_idx, history in enumerate(histories):
+            for m_idx, metric in enumerate(metrics):
+                if config['split']:
+                    plt.figure(figsize=(10, 6))
+                else:
+                    plt.subplot(n_rows, n_cols, h_idx * len(metrics) + m_idx + 1)
 
-            # Opzionale: aggiunge una griglia per una migliore leggibilità
-            axes[i].grid(True, linestyle='--', alpha=0.7)
+                # Get metric data
+                train_metric = history.history[metric]
+                val_metric = history.history.get(f'val_{metric}')
 
-        # Adatta il layout per evitare sovrapposizioni
-        plt.tight_layout()
-        plt.show()
+                # Plot training metric
+                plt.plot(train_metric, 'b-', label=f'Training {metric}')
+
+                # Plot validation metric if available
+                if val_metric and config['aggregate_loss']:
+                    plt.plot(val_metric, 'r-', label=f'Validation {metric}')
+
+                # Set title
+                current_title = config['titles'][m_idx].replace('%i', str(h_idx + 1))
+                plt.title(f'{current_title}')
+
+                # Set labels
+                plt.xlabel('Epochs')
+                plt.ylabel(metric.capitalize())
+
+                plt.legend(prop={'size': 15})
+                plt.grid(True)
+
+                # Show plot if split
+                if config['split']:
+                    plt.tight_layout()
+                    plt.show()
+
+        # Show combined plot if not split
+        if not config['split']:
+            plt.tight_layout()
+            plt.show()
+
 
     @staticmethod
     def euclidean_distance(y_true, y_pred):
         return tf.sqrt(tf.reduce_sum(tf.square(y_true - y_pred), axis=-1))
 
+
     @staticmethod
-    def plot_history(h):
-        Utils.plot_histories([h])
+    def plot_history(h, metrics, config=None):
+        Utils.plot_histories([h], metrics, config)

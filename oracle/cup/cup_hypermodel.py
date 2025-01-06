@@ -9,41 +9,24 @@ class CupHyperModel(kt.HyperModel):
         self.input_shape = input_shape
 
     def build(self, hp: HyperParameters):
-        model = keras.Sequential()
-
-        # Input layer
-        model.add(layers.Input(shape=self.input_shape))
-
-        # Prima layer Dense
-        model.add(layers.Dense(
-            units=201,
-            activation='relu'
-        ))
-        model.add(layers.BatchNormalization())
-        model.add(layers.Dropout(0.2))
-
-        # Seconda layer Dense
-        model.add(layers.Dense(
-            units=293,
-            activation='relu'
-        ))
-        model.add(layers.BatchNormalization())
-        model.add(layers.Dropout(0.2))
-
-        # Terza layer Dense
-        model.add(layers.Dense(
-            units=176,
-            activation='relu'
-        ))
-        model.add(layers.BatchNormalization())
-
-        # Output layer
-        model.add(layers.Dense(3))
+        model = keras.Sequential([
+            layers.Input(shape=self.input_shape),
+            layers.Dense(
+                43,
+                activation='tanh',
+            ),
+            layers.Dropout(0.2),
+            layers.Dense(
+                56,
+                activation='tanh',
+            ),
+            layers.Dense(3)
+        ])
 
         optimizer = keras.optimizers.SGD(
-            learning_rate=hp.Float('learning_rate', min_value=0.001, max_value=0.006, step=0.001),
-            momentum=hp.Float('momentum', min_value=0.3, max_value=0.9, step=0.1),
-            weight_decay=hp.Float('weight_decay', min_value=0.001, max_value=0.006, step=0.001),
+            learning_rate=0.003,
+            momentum=0.9,
+            weight_decay=hp.Float('weight_decay', min_value=0.004, max_value=0.008, step=0.001),
         )
 
         model.compile(

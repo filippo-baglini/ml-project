@@ -1,0 +1,196 @@
+MONK 1
+CONFIG
+layers.Dense(6, activation='tanh'),
+layers.Dense(1, activation='sigmoid')
+optimizer = SGD(learning_rate=0.0525, momentum=0.825, weight_decay=0.002)
+loss='mse', metrics=BinaryAccuracy('accuracy')
+
+TRAINING RESULTS
+| Metric   |     Value |
+|----------|-----------|
+| Loss     | 0.0136769 |
+| Accuracy | 1         |
+
+STRATIFIED K-FOLD (K=4)
+FOLD 1
+Train class distribution: [47 46]
+Validation class distribution: [15 16]
++-------------------+------------------+--------------------+
+|                   | Train Scores     | Validation Scores  |
++-------------------+------------------+--------------------+
+| Loss              | 0.01178255770355 | 0.0774934738874435 |
+| Accuracy          | 1.0              | 0.9032257795333862 |
++-------------------+------------------+--------------------+
+
+FOLD 2
+Train class distribution: [47 46]
+Validation class distribution: [15 16]
+
++-------------------+------------------+--------------------+
+|                   | Train Scores     | Validation Scores  |
++-------------------+------------------+--------------------+
+| Loss              | 0.12778852880001 | 0.1426940411329269 |
+| Accuracy          | 0.87096774578094 | 0.8064516186714172 |
++-------------------+------------------+--------------------+
+
+FOLD 3
+Train class distribution: [46 47]
+Validation class distribution: [16 15]
+
++-------------------+------------------+--------------------+
+|                   | Train Scores     | Validation Scores  |
++-------------------+------------------+--------------------+
+| Loss              | 0.01362748909742 | 0.0246935971081257 |
+| Accuracy          | 1.0              | 1.0                |
++-------------------+------------------+--------------------+
+
+FOLD 4
+Train class distribution: [46 47]
+Validation class distribution: [16 15]
+
++-------------------+------------------+--------------------+
+|                   | Train Scores     | Validation Scores  |
++-------------------+------------------+--------------------+
+| Loss              | 0.02371332235634 | 0.1001456007361412 |
+| Accuracy          | 0.98924732208252 | 0.8387096524238586 |
++-------------------+------------------+--------------------+
+
+Losses (mean):
+Training: 0.0442
+Validation: 0.0863
+
+Accuracies (mean):
+Training: 0.9651
+Validation: 0.8871
+
+MONK 2
+CONFIG
+layers.Dense(6, activation='relu'),
+layers.Dense(1, activation='sigmoid')
+optimizer = SGD(learning_rate=0.0525, momentum=0.825, weight_decay=0.002)
+loss='mse', metrics=BinaryAccuracy('accuracy')
+
+TRAINING RESULTS
+| Metric   |      Value |
+|----------|------------|
+| Loss     | 0.00273185 |
+| Accuracy | 1          |
+
+K-FOLD (K=4)
+FOLD 1
+Train class distribution: [78 48]
+Validation class distribution: [27 16]
+
++-------------------+------------------+--------------------+
+|                   | Train Scores     | Validation Scores  |
++-------------------+------------------+--------------------+
+| Loss              | 0.00334477145225 | 0.0043968660756946 |
+| Accuracy          | 1.0              | 1.0                |
++-------------------+------------------+--------------------+
+
+FOLD 2
+Train class distribution: [79 48]
+Validation class distribution: [26 16]
+
++-------------------+------------------+--------------------+
+|                   | Train Scores     | Validation Scores  |
++-------------------+------------------+--------------------+
+| Loss              | 0.11396593600512 | 0.1524542719125748 |
+| Accuracy          | 0.89763778448105 | 0.8095238208770752 |
++-------------------+------------------+--------------------+
+
+FOLD 3
+Train class distribution: [79 48]
+Validation class distribution: [26 16]
+
++-------------------+------------------+--------------------+
+|                   | Train Scores     | Validation Scores  |
++-------------------+------------------+--------------------+
+| Loss              | 0.00639631180093 | 0.0177451241761446 |
+| Accuracy          | 1.0              | 1.0                |
++-------------------+------------------+--------------------+
+
+FOLD 4
+Train class distribution: [79 48]
+Validation class distribution: [26 16]
+
++-------------------+------------------+--------------------+
+|                   | Train Scores     | Validation Scores  |
++-------------------+------------------+--------------------+
+| Loss              | 0.00481767207384 | 0.0051580700092018 |
+| Accuracy          | 1.0              | 1.0                |
++-------------------+------------------+--------------------+
+
+Loss (mean):
+Training Loss: 0.0321
+Validation Loss: 0.0449
+
+Accuracies (mean):
+Training Accuracy: 0.9744
+Validation Accuracy: 0.9524
+
+MONK 3
+CONFIG
+layers.Dense(6, activation='relu', regularizer=L2(0.002)),
+layers.Dense(1, activation='sigmoid', regularizer=L2(0.001))
+optimizer = SGD(learning_rate=0.0525, momentum=0.825, weight_decay=0.002)
+loss='mse', metrics=BinaryAccuracy('accuracy')
+
+TRAINING RESULTS
+| Metric   |    Value |
+|----------|----------|
+| Loss     | 0.058993 |
+| Accuracy | 0.965278 |
+
+K-FOLD (K=4)
+Train class distribution: [46 45]
+Validation class distribution: [16 15]
+
++-------------------+------------------+--------------------+
+|                   | Train Scores     | Validation Scores  |
++-------------------+------------------+--------------------+
+| Loss              | 0.08475018292665 | 0.0541563555598259 |
+| Accuracy          | 0.92307692766190 | 1.0                |
++-------------------+------------------+--------------------+
+
+FOLD 2
+Train class distribution: [46 45]
+Validation class distribution: [16 15]
+
++-------------------+------------------+--------------------+
+|                   | Train Scores     | Validation Scores  |
++-------------------+------------------+--------------------+
+| Loss              | 0.07223831117153 | 0.1165316551923752 |
+| Accuracy          | 0.94505494832993 | 0.9032257795333862 |
++-------------------+------------------+--------------------+
+
+FOLD 3
+Train class distribution: [47 45]
+Validation class distribution: [15 15]
+
++-------------------+------------------+--------------------+
+|                   | Train Scores     | Validation Scores  |
++-------------------+------------------+--------------------+
+| Loss              | 0.07199931889772 | 0.1307522803544998 |
+| Accuracy          | 0.94565218687058 | 0.8999999761581421 |
++-------------------+------------------+--------------------+
+
+FOLD 4
+Train class distribution: [47 45]
+Validation class distribution: [15 15]
+
++-------------------+------------------+--------------------+
+|                   | Train Scores     | Validation Scores  |
++-------------------+------------------+--------------------+
+| Loss              | 0.07642737030983 | 0.0954239219427109 |
+| Accuracy          | 0.94565218687058 | 0.9333333373069763 |
++-------------------+------------------+--------------------+
+
+
+Loss (mean):
+Training Loss: 0.0764
+Validation Loss: 0.0992
+
+Accuracies (mean):
+Training Accuracy: 0.9399
+Validation Accuracy: 0.9341
