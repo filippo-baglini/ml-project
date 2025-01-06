@@ -1,10 +1,23 @@
-# ML-project
+# ML-Project
 
-Implementation from scracth of a feedforward neural network with a comparison to models built using keras, a well known and established library for machine learning; project for the exam of Machine Learning from the Master Degree in Artificial Intelligence.
+## Description
+This project involves the implementation of a feedforward neural network from scratch, compared to models built using Keras, a well-established library for machine learning. The project is part of the Machine Learning exam for the Master's Degree in Artificial Intelligence
 
-## Important!
-Before executing any code check the requirements.txt to ensure you have installed all the needed libraries.
+## Important Instructions
+1. **Check Requirements**: Before running any code, ensure you have installed all necessary libraries by referring to the `requirements.txt` file ✅
 
-To test the NN built from scratch, access any of the directories inside the directory 'tests' and then run any of the tests present.
+2. **Testing the Custom Neural Network**:
+   - 📂 Access any of the directories inside the `tests` folder
+   - ▶️ Run any of the test scripts available in the chosen directory
 
-Generally to train a single model using batch training on any of the Monk datasets it takes less than a second, whereas training a single model on the Cup dataset requires a few seconds.
+3. **Performance Expectations**:
+   - ⚡ Training a single model using batch training on any of the Monk datasets generally takes less than a second
+   - ⏱️ Training a single model on the Cup dataset requires a few seconds
+
+## Oracle Files
+- 📁 All oracle models built with Keras are located in the `oracle` folder
+- To train a model on an entire dataset, perform k-fold cross-validation or execute a grid search, simply run the corresponding Python file in the `oracle` directory 🖥️
+
+---
+
+Good luck! 🎉
