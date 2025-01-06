@@ -42,9 +42,6 @@ num_epochs = [1000]
 nn, best_train_loss = grid_search_hold_out(train_data_in, train_data_out, eval_data_in, eval_data_out, num_units, num_layers, act_funs, learning_rates, losses, regularization, lambda_values, momentum_values, early_stopping, num_epochs, task = "Regression")
 nn.reset()
 
-# retrain_data_in = np.concatenate((train_data_in, eval_data_in))
-# retrain_data_out = np.concatenate((train_data_out, eval_data_out))
-
 nn.train(train_data_in, train_data_out, 1000, True, None, None, best_train_loss)
 
 nn.test(test_data_in, test_data_out)
