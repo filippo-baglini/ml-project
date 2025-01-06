@@ -24,6 +24,22 @@ class FF_Neural_Network:
             momentum: Optional[Momentum] = None,
             early_stopping: Optional[Early_stopping] = None
             ):
+        """
+        Initializes a feedforward neural network.
+
+        Args:
+            input_size (int): The size of the input layer.
+            layers (List[Layer]): List of layer objects defining the network architecture.
+            learning_rate (Learning_rate): Learning rate object for weight updates.
+            loss (Loss): Loss function used for training.
+            regularized (Optional[Literal["Lasso", "Tikhonov"]]): Regularization type (Lasso or Tikhonov).
+            lambda_par (Optional[float]): Lambda value for regularization.
+            momentum (Optional[Momentum]): Momentum object for weight updates.
+            early_stopping (Optional[Early_stopping]): Early stopping criterion.
+
+        Raises:
+            RuntimeError: If the input size does not match the size of the first layer.
+        """
 
         self.input_size = input_size
         self.layers = layers
@@ -40,6 +56,16 @@ class FF_Neural_Network:
     
 
     def fwd_computation(self, input):
+        """
+        Performs forward computation through the network.
+
+        Args:
+            input (np.ndarray): Input data to the network.
+
+        Returns:
+            np.ndarray: Output of the network after forward computation.
+        """
+
         out = np.array([])
         for layer in self.layers:
             out = layer.fwd_computation(input)
@@ -48,6 +74,16 @@ class FF_Neural_Network:
     
 
     def bwd_computation(self, output, pred):
+        """
+        Performs backpropagation to compute gradients and update weights.
+
+        Args:
+            output (np.ndarray): Ground truth labels.
+            pred (np.ndarray): Predictions from the forward pass.
+
+        Returns:
+            None
+        """
        
         delta_prev_layer = np.array([])
         prev_layer = None
@@ -102,6 +138,7 @@ class FF_Neural_Network:
                 if (grad.ndim == 1):
                     grad = grad.reshape(grad.shape[0], 1)
 
+            #Gradient clipping to avoid exploding gradient 
             grad = np.clip(grad, -0.3, 0.3)
 
             bias_update = self.learning_rate() * np.sum(delta, axis=0, keepdims=True)
@@ -120,8 +157,6 @@ class FF_Neural_Network:
             delta_prev_layer = delta
             prev_layer = layer
 
-        if isinstance(self.learning_rate, Linear_decay_learning_rate):
-            self.learning_rate.update_counter()
         self.past_grad = current_grad
 
 
@@ -139,6 +174,25 @@ class FF_Neural_Network:
             mode: Optional[Literal["Online", "Batch", "Minibatch"]] = "Batch",
             mb_number = None
             ):
+        """
+        Trains the neural network using the specified mode.
+
+        Args:
+            input (np.ndarray): Training input data.
+            output (np.ndarray): Training output labels.
+            epochs (int): Number of epochs to train the model.
+            plot (bool): Whether to plot training metrics. Defaults to False.
+            eval_input (Optional[np.ndarray]): Validation input data.
+            eval_output (Optional[np.ndarray]): Validation output labels.
+            test_input (Optional[np.ndarray]): Test input data.
+            test_output (Optional[np.ndarray]): Test output labels.
+            best_train_loss (float): Threshold for early stopping based on training loss.
+            mode (Optional[Literal["Online", "Batch", "Minibatch"]]): Training mode (Online, Batch, Minibatch).
+            mb_number (int): Number of minibatches (required if mode is Minibatch).
+
+        Returns:
+            Various training and validation metrics depending on the inputs.
+        """
         
         train_losses = []
         train_accuracies = []
@@ -160,7 +214,9 @@ class FF_Neural_Network:
             record_accuracy = False
 
         for epoch in range(epochs):
-        
+            
+            #We perform this check during retraining to ensure that the new training loss does not get lower 
+            #than the one of the originally trained model, preventing overtraining and thus overfitting
             if (best_train_loss is not None and len(train_losses) != 0):
                 if (train_losses[-1] < best_train_loss):
                     break
@@ -225,6 +281,7 @@ class FF_Neural_Network:
                     test_loss = self.test(test_input, test_output)
                     test_losses.append(test_loss)
             
+            #Uncomment to print information during training, to get a sense of how the model is learning
             # if (epoch % 100 == 0 or epoch == epochs - 1):
             #     if (record_accuracy):
             #         print(f"Training Accuracy at epoch {epoch + 1} = {train_acc:.4f}")
@@ -259,6 +316,19 @@ class FF_Neural_Network:
 
 
     def evaluate(self, eval_input: np.ndarray, eval_output: np.ndarray, eval_losses: np.ndarray, eval_accuracies: np.ndarray, record_accuracy: bool):
+        """
+        Evaluates the model on validation data.
+
+        Args:
+            eval_input (np.ndarray): Validation input data.
+            eval_output (np.ndarray): Validation output labels.
+            eval_losses (np.ndarray): List to record validation losses.
+            eval_accuracies (np.ndarray): List to record validation accuracies.
+            record_accuracy (bool): Whether to record accuracy metrics.
+
+        Returns:
+            bool: True if early stopping criterion is met, False otherwise.
+        """
 
         eval_loss = 0
         if (record_accuracy):
@@ -268,7 +338,6 @@ class FF_Neural_Network:
         eval_loss = self.loss.compute(self.fwd_computation(eval_input), eval_output)
         if (self.early_stopping is not None):
             if (self.early_stopping(eval_losses, eval_loss)):
-                #print(f"Early stopping activated, halting training at epoch {epoch}.")
                 eval_losses.append(eval_loss)
                 return True
         eval_losses.append(eval_loss)
@@ -276,6 +345,17 @@ class FF_Neural_Network:
 
 
     def test(self, input: np.ndarray, output: np.ndarray):
+        """
+        Tests the model on unseen data.
+
+        Args:
+            input (np.ndarray): Test input data.
+            output (np.ndarray): Test output labels.
+
+        Returns:
+            float: Test loss.
+            float: Test accuracy (if applicable).
+        """
 
         #Adjust the outputs to -1, 1 for Tanh
         if (isinstance(self.layers[-1].activation, Tanh)):
@@ -299,15 +379,30 @@ class FF_Neural_Network:
     
 
     def blind_test_ML_cup (self, test_input: np.ndarray):
+        """
+        Performs predictions on test data and saves results.
+
+        Args:
+            test_input (np.ndarray): Test input data.
+
+        Returns:
+            None
+        """
+
         test_output = self.fwd_computation(test_input)
         save_predictions(test_output, "blind test results")
 
     
     def adjust_learning_rate(self, batch_size_training: int, batch_size_retraining: int):
         """
-        Since the gradient computation depends on the batch size since its value is not normalized,
-        this method is used to adjust the learning rate when retraining on a larger amount of
-        training data
+        Adjusts the learning rate when retraining on different batch sizes.
+
+        Args:
+            batch_size_training (int): Original batch size used during training.
+            batch_size_retraining (int): New batch size for retraining.
+
+        Returns:
+            None
         """
 
         if (not isinstance(self.learning_rate, Linear_decay_learning_rate)):
@@ -318,8 +413,12 @@ class FF_Neural_Network:
 
 
     def reset(self):
-        """Method to allow resetting the weights to retrain a model"""
+        """
+        Resets the weights of the network for retraining.
 
+        Returns:
+            None
+        """
         for layer in self.layers:
             layer.weights = layer.initialize_weights(layer.num_inputs, layer.num_units, layer.initialization_technique)
     

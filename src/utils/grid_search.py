@@ -30,6 +30,29 @@ def grid_search_hold_out(
         num_epochs: List[int],
         task: Optional[Literal["Classification", "Regression"]] = "Classification"
         ):
+    """
+    Perform a grid search using the hold-out validation approach to find the best hyperparameter configuration for a feedforward neural network.
+
+    Args:
+        train_data_in (np.ndarray): Input features for the training dataset.
+        train_data_out (np.ndarray): Output targets for the training dataset.
+        eval_data_in (np.ndarray): Input features for the evaluation (validation) dataset.
+        eval_data_out (np.ndarray): Output targets for the evaluation (validation) dataset.
+        num_units (List[int]): List of possible numbers of units per layer.
+        num_layers (List[int]): List of possible numbers of layers.
+        activations (List[ActivationFunction]): List of possible activation functions for layers.
+        learning_rates (List[Learning_rate]): List of learning rates to evaluate.
+        losses (List[Loss]): List of loss functions to evaluate.
+        regularization (List[str]): List of regularization techniques to apply (e.g., L1, L2).
+        lambda_values (List[float]): List of regularization strength values.
+        momentum_values (List[Momentum]): List of momentum values to evaluate.
+        early_stopping (List[Early_stopping]): List of early stopping configurations.
+        num_epochs (List[int]): List of numbers of epochs for training.
+        task (Optional[Literal["Classification", "Regression"]]): Task type, either "Classification" or "Regression". Defaults to "Classification".
+
+    Returns:
+        Tuple: A tuple containing the best neural network model and the best training loss.
+    """
     
     best_eval_loss = float('inf')
     best_train_loss = float('inf')
@@ -59,12 +82,12 @@ def grid_search_hold_out(
                             for stopping in early_stopping:
                                 for epochs in num_epochs:
                                     for config in layer_configs:
-                                        eval_loss_values = np.array([])
-                                        train_loss_values = np.array([])
-                                        train_losses = []
-                                        train_accuracies = []
-                                        eval_losses = []
-                                        eval_accuracies = []
+                                        eval_loss_values = np.array([]) #Contains the validation loss of each trial at the end of training
+                                        train_loss_values = np.array([]) #Contains the training loss of each trial at the end of training
+                                        train_losses = [] #Train losses of each trial
+                                        train_accuracies = [] #Train accuracies of each trial
+                                        eval_losses = [] #Validation losses of each trial
+                                        eval_accuracies = [] #Vaildation accuracies of each trial
 
                                         nn = FF_Neural_Network(input_size, config, learning_rate, loss, reg, lambda_par, momentum, stopping)
 
@@ -79,8 +102,8 @@ def grid_search_hold_out(
                                             nn.reset()
                                         mean_eval_loss = np.mean(eval_loss_values)
                                         mean_train_loss = np.mean(train_loss_values)
-                                        #print(f"MEAN LOSS: {mean_eval_loss}")
                                         mean_standard_deviation = np.std(eval_loss_values)
+
                                         if (task == "Classification"):
                                             mean_accuracy = 0
                                             for run in eval_accuracies:
@@ -158,6 +181,28 @@ def grid_search_k_fold(
         num_epochs: List[int],
         task: Optional[Literal["Classification", "Regression"]] = "Classification"
         ):
+    """
+    Perform a grid search using k-fold cross-validation to find the best hyperparameter configuration for a feedforward neural network.
+
+    Args:
+        input_data (np.ndarray): List of input feature arrays for each fold.
+        output_data (np.ndarray): List of output target arrays for each fold.
+        num_units (List[int]): List of possible numbers of units per layer.
+        num_layers (List[int]): List of possible numbers of layers.
+        activations (List[ActivationFunction]): List of possible activation functions for layers.
+        learning_rates (List[Learning_rate]): List of learning rates to evaluate.
+        losses (List[Loss]): List of loss functions to evaluate.
+        regularization (List[str]): List of regularization techniques to apply (e.g., L1, L2).
+        lambda_values (List[float]): List of regularization strength values.
+        momentum_values (List[Momentum]): List of momentum values to evaluate.
+        early_stopping (List[Early_stopping]): List of early stopping configurations.
+        num_epochs (List[int]): List of numbers of epochs for training.
+        task (Optional[Literal["Classification", "Regression"]]): Task type, either "Classification" or "Regression". Defaults to "Classification".
+
+    Returns:
+        Tuple: A tuple containing the best neural network model and the best training loss.
+    """
+
     best_eval_loss = float('inf')
     best_train_loss = float('inf')
     best_eval_standard_deviation = float('inf')
@@ -187,17 +232,17 @@ def grid_search_k_fold(
                                 for epochs in num_epochs:
                                     for config in layer_configs:
                                         eval_loss_values = np.array([]) #Eval losses over all folds
-                                        all_train_losses = []
-                                        all_train_accuracies = []
-                                        all_eval_losses = []
-                                        all_eval_accuracies = []
-                                        train_loss_values = np.array([])
+                                        all_train_losses = [] #Train losses of all trials for each fold
+                                        all_train_accuracies = []  #Train accuracies of all trials for each fold
+                                        all_eval_losses = []  #Validation losses of all trials for each fold
+                                        all_eval_accuracies = [] #Validation accuracies of all trials for each fold
+                                        train_loss_values = np.array([]) #Contains the training loss of all trials at the end of training for each fold
 
                                         nn = FF_Neural_Network(input_size, config, learning_rate, loss, reg, lambda_par, momentum, stopping)
                                         for i, fold in enumerate(input_data):
-                                            fold_loss_values = np.array([]) #losses on different trials over a fold
-                                            eval_losses = np.array([]) #Losses over same trials over the same fold
-                                            eval_accuracies = np.array([])
+                                            fold_loss_values = np.array([]) #Contains the validation loss of all trials at the end of training for the current fold
+                                            eval_losses = np.array([]) #Validation losses of a trial for the current fold
+                                            eval_accuracies = np.array([]) #Validation accuracies of a trial for the current fold
                                             train_data_in = np.concatenate([input_data[j] for j in range(len(input_data)) if j != i])
                                             train_data_out = np.concatenate([output_data[j] for j in range(len(input_data)) if j != i])
                                             eval_data_in = fold
@@ -216,9 +261,9 @@ def grid_search_k_fold(
                                             eval_loss_values = np.append(eval_loss_values, mean_fold_eval_loss)
                                         
                                         mean_eval_loss = np.mean(eval_loss_values)
-                                        #print(f"MEAN LOSS: {mean_eval_loss}")
                                         mean_standard_deviation = np.std(eval_loss_values)
                                         mean_train_loss = np.mean(train_loss_values)
+
                                         if (task == "Classification"):
                                             mean_accuracy = 0
                                             for run in all_eval_accuracies:
@@ -301,6 +346,31 @@ def random_search_hold_out(
         trials: int,
         task: Optional[Literal["Classification", "Regression"]] = "Classification"
         ):
+    """
+    Perform random search for neural network configurations using hold-out validation.
+
+    Parameters:
+        train_data_in (np.ndarray): Input training data.
+        train_data_out (np.ndarray): Output training data.
+        eval_data_in (np.ndarray): Input evaluation data.
+        eval_data_out (np.ndarray): Output evaluation data.
+        units_range (tuple[int, int]): Range of units per layer.
+        layers_range (tuple[int, int]): Range of number of layers.
+        activations (List[ActivationFunction]): List of activation functions.
+        learning_rate_range (tuple[float, float]): Range of learning rates.
+        losses (List[Loss]): List of loss functions.
+        regularizers (List[str]): List of regularization methods.
+        lambda_range (tuple[float, float]): Range for lambda parameter for regularization.
+        momentum_range (tuple[float, float]): Range for momentum parameter.
+        stoppings (List[Early_stopping]): List of early stopping strategies.
+        epochs (List[int]): List of possible epochs.
+        trials (int): Number of trials to perform.
+        task (Optional[Literal["Classification", "Regression"]]): Type of task, defaults to "Classification".
+
+    Returns:
+        tuple: Best neural network model and the corresponding training loss.
+    """
+    
     best_eval_loss = float('inf')
     best_eval_standard_deviation = float('inf')
     best_train_loss = float('inf')
@@ -359,7 +429,6 @@ def random_search_hold_out(
                 nn.reset()
 
             mean_eval_loss = np.mean(eval_loss_values)
-            #print(f"MEAN LOSS: {mean_eval_loss}")
             mean_standard_deviation = np.std(eval_loss_values)
             mean_train_loss = np.mean(train_loss_values)
             if (task == "Classification"):
@@ -441,6 +510,29 @@ def random_search_k_fold(
         trials: int,
         task: Optional[Literal["Classification", "Regression"]] = "Classification"
         ):
+    """
+    Perform random search for neural network configurations using k-fold cross-validation.
+
+    Parameters:
+        input_data (np.ndarray): Input data split into folds.
+        output_data (np.ndarray): Output data split into folds.
+        units_range (tuple[int, int]): Range of units per layer.
+        layers_range (tuple[int, int]): Range of number of layers.
+        activations (List[ActivationFunction]): List of activation functions.
+        learning_rate_range (tuple[float, float]): Range of learning rates.
+        losses (List[Loss]): List of loss functions.
+        regularizers (List[str]): List of regularization methods.
+        lambda_range (tuple[float, float]): Range for lambda parameter for regularization.
+        momentum_range (tuple[float, float]): Range for momentum parameter.
+        stoppings (List[Early_stopping]): List of early stopping strategies.
+        epochs (List[int]): List of possible epochs.
+        trials (int): Number of trials to perform.
+        task (Optional[Literal["Classification", "Regression"]]): Type of task, defaults to "Classification".
+
+    Returns:
+        tuple: Best neural network model and the corresponding training loss.
+    """
+
     best_eval_loss = float('inf')
     best_eval_standard_deviation = float('inf')
     best_train_loss = float('inf')
@@ -481,7 +573,7 @@ def random_search_k_fold(
             early_stopping = random.choice(stoppings)
             num_epochs = random.choice(epochs)
 
-            eval_loss_values = np.array([]) #Eval losses over all folds
+            eval_loss_values = np.array([]) 
             all_train_losses = []
             all_train_accuracies = []
             all_eval_losses = []
@@ -490,8 +582,8 @@ def random_search_k_fold(
             nn = FF_Neural_Network(input_size, config, learning_rate, loss, regularization, lambda_par, momentum, early_stopping)
 
             for i, fold in enumerate(input_data):
-                fold_loss_values = np.array([]) #losses on different trials over a fold
-                eval_losses = np.array([]) #Losses over same trials over the same fold
+                fold_loss_values = np.array([]) 
+                eval_losses = np.array([]) 
                 eval_accuracies = np.array([])
                 train_data_in = np.concatenate([input_data[j] for j in range(len(input_data)) if j != i])
                 train_data_out = np.concatenate([output_data[j] for j in range(len(input_data)) if j != i])
@@ -510,7 +602,6 @@ def random_search_k_fold(
                 eval_loss_values = np.append(eval_loss_values, mean_fold_eval_loss)
 
             mean_eval_loss = np.mean(eval_loss_values)
-            #print(f"MEAN LOSS: {mean_loss}")
             mean_standard_deviation = np.std(eval_loss_values)
             mean_train_loss = np.mean(train_loss_values)
             if (task == "Classification"):
@@ -576,7 +667,27 @@ def random_search_k_fold(
     return best_nn, best_train_loss
 
 
-def all_layer_configs(num_units: List[int], num_layers: List[int], act_funs: list[ActivationFunction], input_size: int, output_size: int, task: str):
+def all_layer_configs(
+        num_units: List[int], 
+        num_layers: List[int], 
+        act_funs: list[ActivationFunction], 
+        input_size: int, output_size: int, 
+        task: str
+        ):
+    """
+    Generate all possible layer configurations for a neural network.
+
+    Parameters:
+        num_units (List[int]): List of possible units per layer.
+        num_layers (List[int]): List of possible numbers of layers.
+        act_funs (list[ActivationFunction]): List of activation functions.
+        input_size (int): Size of the input layer.
+        output_size (int): Size of the output layer.
+        task (str): Task type, either "Classification" or "Regression".
+
+    Returns:
+        list: List of all possible layer configurations.
+    """
     unit_act_configs = list()
     for i in range(len(num_layers)):
         units = list(product(num_units, repeat = num_layers[i]))
@@ -589,7 +700,7 @@ def all_layer_configs(num_units: List[int], num_layers: List[int], act_funs: lis
         layer_list = [Dense_layer(input_size, config[0][0], config[1][0])] #Input layer
         for i, num_units in enumerate(config[0]):
             if (i == len(config[0]) - 1): #output layer
-                if (task == "Classification"):
+                if (task == "Classification"): #We want to create configurations with both Tanh and Logistic as the activation function for the output layer
                     layer1 = Dense_layer(num_units, output_size, Logistic)
                     layer2 = Dense_layer(num_units, output_size, Tanh)
                     layer_list_copy = list(layer_list)
@@ -617,6 +728,20 @@ def generate_config(
         output_size:int,
         task:str
         ):
+    """
+    Generate a random neural network configuration.
+
+    Parameters:
+        units (tuple[int, int]): Range of units per layer.
+        layers (tuple[int, int]): Range of number of layers.
+        activations (List[ActivationFunction]): List of activation functions.
+        input_size (int): Size of the input layer.
+        output_size (int): Size of the output layer.
+        task (str): Task type, either "Classification" or "Regression".
+
+    Returns:
+        list: List representing the neural network configuration.
+    """
        
     layer_list = [Dense_layer(input_size, random.randint(*units), random.choice(activations))] #Input layer
     num_layers = random.randint(*layers)
