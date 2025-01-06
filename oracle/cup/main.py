@@ -4,8 +4,8 @@ import numpy as np
 
 from util.utils import Utils
 
-cup_csv_train = '../../data/ML-CUP24-TR.csv'
-cup_csv_test = '../../data/ML-CUP24-TS.csv'
+cup_csv_train = '../../data/ML_Cup/ML-CUP24-TR.csv'
+cup_csv_test = '../../data/ML_Cup/ML-CUP24-TS.csv'
 
 trainset = np.loadtxt(cup_csv_train, delimiter=",", skiprows=1, dtype=float)
 trainset = trainset[:, 1:]

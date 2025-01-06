@@ -17,8 +17,8 @@ class MonkModel:
         if num_dataset < 1 or num_dataset > 3:
             raise ValueError("num_dataset must be: 1, 2 or 3")
 
-        trainset = np.loadtxt(f'../../data/monks-{num_dataset}.train', dtype=int, usecols=tuple(range(0, 7)))
-        testset = np.loadtxt(f'../../data/monks-{num_dataset}.test', dtype=int, usecols=tuple(range(0, 7)))
+        trainset = np.loadtxt(f'../../data/Monk/monks-{num_dataset}.train', dtype=int, usecols=tuple(range(0, 7)))
+        testset = np.loadtxt(f'../../data/Monk/monks-{num_dataset}.test', dtype=int, usecols=tuple(range(0, 7)))
 
         self.X_train, self.y_train = self.__create_in_out(trainset)
         self.__X_test, self.__y_test = self.__create_in_out(testset)
