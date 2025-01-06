@@ -8,7 +8,7 @@ from sklearn.model_selection import KFold
 
 from cup_hypermodel import CupHyperModel
 
-trainset = np.loadtxt('../../data/ML-CUP24-TR.csv', delimiter=",", skiprows=1, dtype=float)
+trainset = np.loadtxt('../../data/ML_Cup/ML-CUP24-TR.csv', delimiter=",", skiprows=1, dtype=float)
 trainset = trainset[:, 1:]
 
 X = np.array(trainset[:, :-3])

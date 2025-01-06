@@ -6,7 +6,7 @@ from sklearn.model_selection import KFold
 
 from util.utils import Utils
 
-cup_csv = '../../data/ML-CUP24-TR.csv'
+cup_csv = '../../data/ML_Cup/ML-CUP24-TR.csv'
 
 trainset = np.loadtxt(cup_csv, delimiter=",", skiprows=1, dtype=float)
 trainset = trainset[:, 1:]
