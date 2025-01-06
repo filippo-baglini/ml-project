@@ -18,6 +18,10 @@ kfold = KFold(n_splits=4)
 
 train_losses = []
 val_losses = []
+
+train_losses_ed = []
+val_losses_ed = []
+
 histories = []
 n_fold = 1
 
@@ -46,15 +50,21 @@ for train_index, val_index in kfold.split(X):
 
     train_losses.append(train_scores[0])
     val_losses.append(val_scores[0])
+
+    train_losses_ed.append(train_scores[2])
+    val_losses_ed.append(val_scores[2])
+
     histories.append(h)
 
     n_fold += 1
     print(f"Train scores: {train_scores}")
     print(f"Val scores: {val_scores}\n")
 
-print('\n\nMedia e Deviazione Standard:')
-print(f'Training MSE: {np.mean(train_losses):.4f} (±{np.std(train_losses):.4f})')
-print(f'Validation MSE: {np.mean(val_losses):.4f} (±{np.std(val_losses):.4f})')
+print('\n\nMedia:')
+print(f'Training MSE: {np.mean(train_losses):.4f}')
+print(f'Validation MSE: {np.mean(val_losses):.4f}\n')
+print(f'Training Euclidean Distance: {np.mean(train_losses_ed):.4f}')
+print(f'Validation Euclidean Distance: {np.mean(val_losses_ed):.4f}\n')
 
 
 Utils.plot_histories(histories, metrics=['mse', 'euclidean_distance'])

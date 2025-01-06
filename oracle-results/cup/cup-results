@@ -5,13 +5,16 @@ layers.Dropout(0.2),
 layers.Dense(56, activation='tanh'),
 layers.Dense(3)
 
-optimizer = Adam(learning_rate=0.004, momentum=0.9, weight_decay=0.0065)
+optimizer = Adam(learning_rate=0.004, weight_decay=0.0065, clipnorm=0.5)
 
 TRAINING
 Loss (MSE): 0.2193032205104828
 Loss (Euclidean distance): 0.6519619822502136
 
 K-FOLD (K=4)
-Media e Deviazione Standard:
-Training MSE: 0.2627 (±0.0223)
-Validation MSE: 0.2973 (±0.0268)
+Media valori:
+Training MSE: 0.2713
+Validation MSE: 0.2972
+
+Training Euclidean Distance: 0.7504
+Validation Euclidean Distance: 0.7851
